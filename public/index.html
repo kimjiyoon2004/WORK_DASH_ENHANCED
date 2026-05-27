@@ -1,0 +1,4265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workflow OS · Final SaaS Dashboard</title>
+  <style>
+    /* ─────────────────────────────────────────
+       Workflow OS Final Dashboard
+       - 16:9 단일 화면
+       - 관리자/사원 권한 분리
+       - Google 로그인 데모
+       - 업무 추가 모달
+       - KPI 자동 갱신
+       - 채팅/업무피드 분리
+       - 포스트잇 3개
+       - 배포 상태/반영 여부 체크 패널
+    ───────────────────────────────────────── */
+
+    :root{
+      --bg:#050b16;
+      --panel:#0b1729;
+      --panel2:#0f2138;
+      --panel3:#132a46;
+      --line:rgba(255,255,255,.12);
+      --line2:rgba(255,255,255,.08);
+      --text:#eef6ff;
+      --muted:#8da3bd;
+      --blue:#4aa3ff;
+      --cyan:#40e0d0;
+      --green:#4ade80;
+      --yellow:#facc15;
+      --red:#fb7185;
+      --purple:#a78bfa;
+      --orange:#fb923c;
+      --shadow:0 18px 50px rgba(0,0,0,.35);
+      --radius:16px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:
+        radial-gradient(circle at 12% 8%,rgba(74,163,255,.25),transparent 24%),
+        radial-gradient(circle at 82% 6%,rgba(64,224,208,.14),transparent 22%),
+        linear-gradient(135deg,#050b16,#07111f 48%,#030712);
+      color:var(--text);
+      font-family:Inter, Pretendard, "Noto Sans KR", Arial, sans-serif;
+      overflow:hidden;
+    }
+
+    button,input,select,textarea{font-family:inherit}
+    button{cursor:pointer;border:0}
+    input,select,textarea{outline:none}
+
+    /* ── 16:9 화면 프레임 ── */
+    .stage{
+      width:100vw;
+      height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:12px;
+    }
+
+    .screen{
+      width:min(100vw,177.78vh);
+      height:min(100vh,56.25vw);
+      min-width:1280px;
+      min-height:720px;
+      position:relative;
+    }
+
+    .login-page,
+    .dashboard{
+      position:absolute;
+      inset:0;
+      border:1px solid var(--line);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    /* ───────────────── 로그인 화면 ───────────────── */
+    .login-page{
+      display:grid;
+      grid-template-columns:1.12fr .88fr;
+      gap:24px;
+      padding:28px;
+      background:
+        radial-gradient(circle at 8% 5%,rgba(74,163,255,.24),transparent 30%),
+        radial-gradient(circle at 78% 18%,rgba(167,139,250,.14),transparent 24%),
+        linear-gradient(135deg,rgba(13,27,47,.96),rgba(6,16,29,.99));
+    }
+
+    .login-left{
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      padding:10px;
+    }
+
+    .system-badge{
+      width:max-content;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:9px 13px;
+      border-radius:999px;
+      background:rgba(255,255,255,.07);
+      border:1px solid var(--line);
+      font-size:12px;
+      color:#dbeafe;
+    }
+
+    .pulse{
+      width:8px;height:8px;border-radius:50%;
+      background:var(--green);
+      box-shadow:0 0 14px var(--green);
+    }
+
+    .login-copy h1{
+      margin:0;
+      max-width:720px;
+      font-size:46px;
+      line-height:1.04;
+      letter-spacing:-.055em;
+    }
+
+    .login-copy p{
+      margin:18px 0 0;
+      max-width:660px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.65;
+    }
+
+    .login-feature-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:9px;
+    }
+
+    .login-feature{
+      padding:13px;
+      border-radius:18px;
+      background:rgba(255,255,255,.055);
+      border:1px solid var(--line2);
+    }
+
+    .login-feature strong{
+      display:block;
+      font-size:19px;
+      margin-bottom:5px;
+    }
+
+    .login-feature span{
+      display:block;
+      font-size:10.5px;
+      color:var(--muted);
+      line-height:1.35;
+    }
+
+    .login-panel{
+      align-self:center;
+      padding:22px;
+      border-radius:26px;
+      background:rgba(255,255,255,.065);
+      border:1px solid var(--line);
+      backdrop-filter:blur(16px);
+    }
+
+    .login-panel h2{
+      margin:0 0 6px;
+      font-size:22px;
+      letter-spacing:-.03em;
+    }
+
+    .login-panel p{
+      margin:0 0 16px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.5;
+    }
+
+    .role-cards{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-bottom:12px;
+    }
+
+    .role-card{
+      padding:12px;
+      border-radius:16px;
+      background:rgba(255,255,255,.055);
+      border:1px solid var(--line2);
+      color:var(--text);
+      text-align:left;
+      transition:.2s;
+    }
+
+    .role-card.active{
+      border-color:rgba(64,224,208,.5);
+      background:rgba(64,224,208,.12);
+      box-shadow:0 0 22px rgba(64,224,208,.1);
+    }
+
+    .role-card strong{
+      display:block;
+      font-size:13px;
+      margin-bottom:4px;
+    }
+
+    .role-card span{
+      display:block;
+      font-size:9.8px;
+      color:var(--muted);
+      line-height:1.4;
+    }
+
+    .field{
+      margin-bottom:8px;
+    }
+
+    .field label{
+      display:block;
+      margin-bottom:5px;
+      font-size:10.5px;
+      color:#b8c7d9;
+    }
+
+    .field input{
+      width:100%;
+      height:39px;
+      padding:0 11px;
+      border-radius:13px;
+      border:1px solid var(--line);
+      background:rgba(3,7,18,.32);
+      color:var(--text);
+    }
+
+    .login-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .google-btn{
+      height:39px;
+      border-radius:14px;
+      font-weight:800;
+      font-size:12px;
+    }
+
+    .primary-btn{
+      color:#06101d;
+      background:linear-gradient(135deg,var(--blue),var(--cyan));
+    }
+
+    .secondary-btn{
+      color:var(--text);
+      background:rgba(255,255,255,.09);
+      border:1px solid var(--line);
+    }
+
+    .google-btn{
+      width:100%;
+      margin-top:8px;
+      color:var(--text);
+      background:rgba(255,255,255,.09);
+      border:1px solid var(--line);
+    }
+
+    .login-note{
+      margin-top:12px;
+      font-size:10.5px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+
+    /* ───────────────── 대시보드 화면 ───────────────── */
+    .dashboard{
+      display:none;
+      padding:10px;
+      grid-template-rows:50px 42px 1fr 150px 34px;
+      gap:7px;
+      background:linear-gradient(135deg,rgba(13,27,47,.96),rgba(8,18,33,.98));
+    }
+
+    .dashboard.show{display:grid}
+
+    .dashboard::before{
+      content:"";
+      position:absolute;
+      inset:-120px;
+      background:
+        radial-gradient(circle at 15% 10%,rgba(74,163,255,.18),transparent 25%),
+        radial-gradient(circle at 75% 8%,rgba(64,224,208,.13),transparent 24%),
+        radial-gradient(circle at 92% 78%,rgba(167,139,250,.12),transparent 28%);
+      pointer-events:none;
+    }
+
+    .dashboard>*{position:relative;z-index:1}
+
+    /* ── 헤더 ── */
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:7px 10px;
+      border-radius:var(--radius);
+      background:rgba(255,255,255,.045);
+      border:1px solid var(--line);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .logo{
+      width:36px;height:36px;
+      border-radius:13px;
+      display:grid;
+      place-items:center;
+      color:#06101e;
+      font-weight:900;
+      background:linear-gradient(135deg,var(--blue),var(--cyan));
+      box-shadow:0 0 26px rgba(64,224,208,.22);
+    }
+
+    .title h1{
+      margin:0;
+      font-size:15.5px;
+      letter-spacing:-.02em;
+    }
+
+    .title p{
+      margin:2px 0 0;
+      color:var(--muted);
+      font-size:9.6px;
+    }
+
+    .header-actions{
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .pill{
+      min-height:27px;
+      padding:0 8px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      font-size:9.8px;
+      white-space:nowrap;
+    }
+
+
+
+    /* ── LED 긴급 공지 전광판 ── */
+    .led-notice{
+      flex:1;
+      min-width:260px;
+      max-width:520px;
+      height:31px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:0 10px;
+      border-radius:999px;
+      border:1px solid rgba(251,113,133,.38);
+      background:
+        linear-gradient(90deg,rgba(251,113,133,.16),rgba(250,204,21,.09),rgba(74,163,255,.10)),
+        rgba(3,7,18,.34);
+      box-shadow:0 0 18px rgba(251,113,133,.12), inset 0 0 18px rgba(255,255,255,.035);
+      overflow:hidden;
+    }
+
+    .led-label{
+      flex:0 0 auto;
+      padding:4px 7px;
+      border-radius:999px;
+      color:#fff7ed;
+      background:rgba(251,113,133,.22);
+      border:1px solid rgba(251,113,133,.35);
+      font-size:8.8px;
+      font-weight:900;
+      letter-spacing:.02em;
+      text-shadow:0 0 8px rgba(251,113,133,.7);
+    }
+
+    .led-window{
+      position:relative;
+      flex:1;
+      height:100%;
+      overflow:hidden;
+      mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%);
+      -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%);
+    }
+
+    .led-track{
+      position:absolute;
+      top:50%;
+      transform:translateY(-50%);
+      white-space:nowrap;
+      color:#fff7b8;
+      font-size:10.4px;
+      font-weight:800;
+      letter-spacing:.01em;
+      text-shadow:0 0 6px rgba(250,204,21,.75),0 0 14px rgba(251,113,133,.35);
+      animation:ledMarquee 18s linear infinite;
+    }
+
+    .led-dot{
+      color:#fb7185;
+      margin:0 12px;
+      text-shadow:0 0 8px rgba(251,113,133,.9);
+    }
+
+    @keyframes ledMarquee{
+      0%{transform:translate(100%, -50%)}
+      100%{transform:translate(-100%, -50%)}
+    }
+
+    .pill.green{background:rgba(74,222,128,.12)}
+    .pill.blue{background:rgba(74,163,255,.13)}
+    .pill.purple{background:rgba(167,139,250,.13)}
+    .pill.red{background:rgba(251,113,133,.12)}
+
+    /* ── KPI 요약 바: 큰 카드 대신 한 줄 상태 요약 ── */
+    .kpis{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:7px;
+      min-height:0;
+    }
+
+    .kpi:nth-child(n+5){display:none}
+
+    .kpi{
+      padding:6px 10px;
+      border-radius:13px;
+      background:rgba(255,255,255,.055);
+      border:1px solid var(--line);
+      display:grid;
+      grid-template-columns:auto auto 1fr;
+      grid-template-rows:16px 14px;
+      column-gap:9px;
+      row-gap:1px;
+      align-items:center;
+      overflow:hidden;
+    }
+
+    .kpi-top{
+      grid-column:1;
+      grid-row:1 / 3;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:1px;
+      min-width:58px;
+    }
+
+    .kpi small{
+      color:var(--muted);
+      font-size:8.8px;
+      white-space:nowrap;
+    }
+
+    .kpi .delta{
+      font-size:7.6px;
+      color:var(--green);
+      white-space:nowrap;
+    }
+
+    .kpi .delta.warn{color:var(--red)}
+    .kpi strong{
+      grid-column:2;
+      grid-row:1 / 3;
+      font-size:18px;
+      line-height:1;
+      letter-spacing:-.03em;
+      min-width:34px;
+      text-align:center;
+    }
+
+    .kpi.blue strong{color:var(--blue)}
+    .kpi.red strong{color:var(--red)}
+    .kpi.green strong{color:var(--green)}
+    .kpi.yellow strong{color:var(--yellow)}
+    .kpi.purple strong{color:var(--purple)}
+    .kpi.orange strong{color:var(--orange)}
+
+    .kpi-text{
+      grid-column:3;
+      grid-row:1;
+      min-height:0;
+      font-size:8.2px;
+      color:#dbeafe;
+      line-height:1.1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .kpi-text br{display:none}
+
+    .spark{
+      grid-column:3;
+      grid-row:2;
+      display:flex;
+      align-items:end;
+      gap:2px;
+      height:12px;
+    }
+
+    .spark i{
+      flex:1;
+      min-height:3px;
+      border-radius:4px 4px 1px 1px;
+      background:linear-gradient(180deg,var(--cyan),var(--blue));
+    }
+
+    .mini-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:5px;
+      color:var(--muted);
+      font-size:8.2px;
+    }
+
+    .tiny-bar{
+      flex:1;
+      height:5px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      overflow:hidden;
+    }
+
+    .tiny-fill{
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--blue),var(--cyan));
+    }
+
+    .spark{
+      display:flex;
+      align-items:end;
+      gap:2px;
+      height:16px;
+    }
+
+    .spark i{
+      flex:1;
+      min-height:4px;
+      border-radius:4px 4px 1px 1px;
+      background:linear-gradient(180deg,var(--cyan),var(--blue));
+    }
+
+    /* ── 메인 그리드 ── */
+    .main-grid{
+      min-height:0;
+      display:grid;
+      grid-template-columns:.92fr 1.08fr 1.05fr 1.2fr 1.2fr;
+      grid-template-rows:1fr 116px;
+      gap:7px;
+      grid-template-areas:
+        "todo project analytics comm comm"
+        "ai ai heatmap heatmap notes";
+    }
+
+    .panel{
+      min-height:0;
+      padding:8px;
+      border-radius:var(--radius);
+      background:rgba(255,255,255,.05);
+      border:1px solid var(--line);
+      overflow:hidden;
+    }
+
+    .todo-panel{grid-area:todo}
+    .project-panel{grid-area:project}
+    .analysis-panel{grid-area:analytics}
+    .comm-panel{grid-area:comm}
+    .status-panel{display:none}
+    .ai-panel{grid-area:ai}
+    .heatmap-panel{grid-area:heatmap}
+    .notes-panel{grid-area:notes}
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      margin-bottom:6px;
+    }
+
+    .panel h2{
+      margin:0;
+      font-size:11.3px;
+    }
+
+    .desc{
+      margin-top:2px;
+      color:var(--muted);
+      font-size:9.4px;
+    }
+
+    .mini-btn{
+      min-height:23px;
+      padding:0 7px;
+      border-radius:9px;
+      color:#dcefff;
+      background:rgba(74,163,255,.16);
+      border:1px solid rgba(74,163,255,.3);
+      font-size:9px;
+      white-space:nowrap;
+    }
+
+    /* ── 업무 리스트 ── */
+    .todo-list{
+      max-height:calc(100% - 30px);
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      padding-right:3px;
+    }
+
+    .todo{
+      display:grid;
+      grid-template-columns:14px 1fr auto;
+      align-items:center;
+      gap:6px;
+      padding:6px;
+      border-radius:11px;
+      background:rgba(255,255,255,.055);
+      border:1px solid var(--line2);
+    }
+
+    .todo input[type="checkbox"]{accent-color:var(--green)}
+    .todo-title{
+      width:100%;
+      border:0;
+      background:transparent;
+      color:var(--text);
+      font-size:9.6px;
+    }
+
+    .todo-meta{
+      margin-top:2px;
+      color:var(--muted);
+      font-size:8.8px;
+    }
+
+    .chip{
+      padding:3px 5px;
+      border-radius:999px;
+      background:rgba(251,113,133,.16);
+      color:#ffd6de;
+      font-size:7.6px;
+      white-space:nowrap;
+    }
+
+    .chip.mid{background:rgba(250,204,21,.15);color:#fff0a5}
+    .chip.low{background:rgba(74,222,128,.14);color:#c8ffd8}
+    .chip.info{background:rgba(74,163,255,.16);color:#dcefff}
+    .chip.purple{background:rgba(167,139,250,.16);color:#eadfff}
+
+    /* ── 프로젝트 ── */
+    .project-list{
+      height:calc(100% - 30px);
+      display:grid;
+      grid-template-rows:repeat(4,1fr);
+      gap:5px;
+      min-height:0;
+    }
+
+    .project{
+      padding:6px;
+      border-radius:12px;
+      background:rgba(255,255,255,.055);
+      border:1px solid var(--line2);
+    }
+
+    .project-top{
+      display:flex;
+      justify-content:space-between;
+      gap:5px;
+    }
+
+    .project h3{
+      margin:0;
+      font-size:9.6px;
+    }
+
+    .project p{
+      margin:2px 0 5px;
+      color:var(--muted);
+      font-size:8.8px;
+    }
+
+    .bar{
+      height:6px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      overflow:hidden;
+    }
+
+    .fill{
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--blue),var(--cyan));
+    }
+
+    /* ── 운영 분석 ── */
+    .analysis-grid{
+      height:calc(100% - 30px);
+      display:grid;
+      grid-template-rows:1.12fr .88fr;
+      gap:6px;
+      min-height:0;
+    }
+
+    .micro-card{
+      padding:7px;
+      border-radius:13px;
+      background:rgba(3,7,18,.18);
+      border:1px solid var(--line2);
+      overflow:hidden;
+    }
+
+    .micro-card h3{
+      margin:0 0 5px;
+      font-size:9.6px;
+      display:flex;
+      justify-content:space-between;
+    }
+
+    .micro-card h3 span{
+      color:var(--muted);
+      font-weight:400;
+      font-size:7.8px;
+    }
+
+    .funnel-row{
+      display:grid;
+      grid-template-columns:38px 1fr 24px;
+      align-items:center;
+      gap:5px;
+      margin-bottom:4px;
+      font-size:8.2px;
+    }
+
+    .funnel-bar{
+      height:11px;
+      border-radius:999px;
+      background:rgba(255,255,255,.1);
+      overflow:hidden;
+    }
+
+    .funnel-bar i{
+      display:block;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--purple),var(--cyan));
+    }
+
+    .calendar-density{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:5px;
+      font-size:8.4px;
+    }
+
+    .time-col,.density-col{display:contents}
+
+    .density-chip{
+      min-height:34px;
+      padding:5px 4px;
+      border-radius:10px;
+      border:1px solid var(--line2);
+      background:rgba(255,255,255,.06);
+      display:grid;
+      align-content:center;
+      gap:2px;
+      text-align:center;
+    }
+
+    .density-chip b{font-size:10px;color:#fff}
+    .density-chip span{font-size:7.5px;color:var(--muted)}
+    .density-chip.low{background:rgba(74,222,128,.14)}
+    .density-chip.mid{background:rgba(250,204,21,.20);border-color:rgba(250,204,21,.28)}
+    .density-chip.high{background:rgba(251,113,133,.30);border-color:rgba(251,113,133,.42);box-shadow:0 0 16px rgba(251,113,133,.16)}
+
+    .insight-text{
+      margin-top:5px;
+      padding:5px 6px;
+      border-radius:9px;
+      background:rgba(74,163,255,.10);
+      border:1px solid rgba(74,163,255,.18);
+      font-size:8.8px;
+      color:#eaf6ff;
+      line-height:1.32;
+    }
+
+    /* ── 업무 SNS Hub: 채팅 + 공지 + 액션 타임라인 ── */
+    .comm-split{
+      height:calc(100% - 30px);
+      display:grid;
+      grid-template-columns:1.02fr 1.1fr .82fr;
+      gap:7px;
+      min-height:0;
+    }
+
+    .comm-box{
+      min-height:0;
+      padding:7px;
+      border-radius:13px;
+      background:rgba(3,7,18,.18);
+      border:1px solid var(--line2);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .comm-box-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:6px;
+      font-size:9.8px;
+      color:#eaf6ff;
+    }
+
+    .comm-box-title span{
+      color:var(--muted);
+      font-size:7.8px;
+      font-weight:500;
+    }
+
+
+    .hub-tabs{
+      display:flex;
+      gap:3px;
+      align-items:center;
+    }
+
+    .hub-tab{
+      height:19px;
+      padding:0 6px;
+      border-radius:999px;
+      border:1px solid var(--line2);
+      background:rgba(255,255,255,.055);
+      color:var(--muted);
+      font-size:7.4px;
+      font-weight:800;
+    }
+
+    .hub-tab.active{
+      color:#06101d;
+      background:linear-gradient(135deg,var(--blue),var(--cyan));
+      border-color:rgba(64,224,208,.5);
+      box-shadow:0 0 14px rgba(64,224,208,.18);
+    }
+
+    .date-divider{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      color:var(--muted);
+      font-size:7.6px;
+      font-weight:800;
+      letter-spacing:-.01em;
+      margin:2px 0;
+    }
+
+    .date-divider::before,
+    .date-divider::after{
+      content:"";
+      flex:1;
+      height:1px;
+      background:rgba(255,255,255,.10);
+    }
+
+    .chat-msg.me{
+      grid-template-columns:1fr 38px;
+      background:rgba(250,204,21,.13);
+      border-color:rgba(250,204,21,.20);
+    }
+
+    .chat-msg.me b{order:2;text-align:right;color:#fff5bd}
+    .chat-msg.me span{text-align:right;color:#fff8d5}
+
+    .msg-meta{
+      display:block;
+      margin-top:2px;
+      color:var(--muted)!important;
+      font-size:7px;
+    }
+
+    .feed-time{
+      display:inline-block;
+      margin-top:2px;
+      color:var(--cyan)!important;
+      font-size:7.4px;
+      font-weight:800;
+    }
+
+    .comm-scroll{
+      min-height:0;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      padding-right:2px;
+    }
+
+    .chat-msg,.feed-item{
+      padding:6px 7px;
+      border-radius:10px;
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--line2);
+      font-size:8.8px;
+      line-height:1.34;
+    }
+
+    .chat-msg{
+      display:grid;
+      grid-template-columns:42px 1fr;
+      gap:5px;
+      align-items:center;
+    }
+
+    .chat-msg b,.feed-item b{font-size:8.8px;color:#fff}
+    .chat-msg span,.feed-item span{color:#dbeafe}
+
+    .chat-input{
+      display:grid;
+      grid-template-columns:1fr 30px;
+      gap:4px;
+      margin-top:6px;
+    }
+
+    .chat-input input{
+      height:26px;
+      border-radius:8px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      padding:0 8px;
+      font-size:8.8px;
+    }
+
+    .chat-input button{
+      border-radius:8px;
+      background:rgba(74,163,255,.18);
+      border:1px solid rgba(74,163,255,.30);
+      color:#dcefff;
+      font-size:8px;
+      padding:0;
+    }
+
+    .feed-item{
+      display:grid;
+      grid-template-columns:54px 1fr;
+      gap:5px;
+      align-items:start;
+    }
+
+    .feed-tags{
+      grid-column:2;
+      display:flex;
+      flex-wrap:wrap;
+      gap:3px;
+      margin-top:2px;
+    }
+
+    .tag{
+      font-size:7px;
+      color:#c7f9ff;
+      background:rgba(64,224,208,.11);
+      border:1px solid rgba(64,224,208,.2);
+      padding:1.5px 4px;
+      border-radius:999px;
+    }
+
+    .hub-summary{
+      display:grid;
+      grid-template-rows:auto auto 1fr;
+      gap:6px;
+    }
+
+    .hub-metric-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:5px;
+    }
+
+    .hub-metric{
+      padding:7px;
+      border-radius:11px;
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--line2);
+    }
+
+    .hub-metric strong{display:block;font-size:13px;line-height:1;color:#fff}
+    .hub-metric span{display:block;margin-top:3px;font-size:7.6px;color:var(--muted)}
+
+    .hub-action-list{
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      min-height:0;
+      overflow:auto;
+    }
+
+    .hub-action{
+      padding:6px;
+      border-radius:10px;
+      background:rgba(74,163,255,.10);
+      border:1px solid rgba(74,163,255,.18);
+      font-size:8.3px;
+      line-height:1.32;
+      color:#eaf6ff;
+    }
+
+    .hub-action b{display:block;margin-bottom:2px;color:#fff;font-size:8.6px}
+
+    /* ── 상태 패널 + 반영 체크 ── */
+    .status-list{
+      height:calc(100% - 30px);
+      display:grid;
+      grid-template-rows:auto 1fr;
+      gap:6px;
+      min-height:0;
+    }
+
+    .deploy-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:5px;
+    }
+
+    .deploy-card{
+      padding:6px;
+      border-radius:12px;
+      background:rgba(255,255,255,.055);
+      border:1px solid var(--line2);
+    }
+
+    .deploy-card strong{
+      display:block;
+      font-size:9px;
+      margin-bottom:2px;
+    }
+
+    .deploy-card span{
+      color:var(--green);
+      font-size:8.8px;
+    }
+
+    .check-list{
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      padding-right:2px;
+    }
+
+    .check-item{
+      display:grid;
+      grid-template-columns:16px 1fr auto;
+      align-items:center;
+      gap:5px;
+      padding:5px;
+      border-radius:10px;
+      background:rgba(255,255,255,.045);
+      border:1px solid var(--line2);
+      font-size:8.8px;
+    }
+
+    .check-mark{
+      width:15px;height:15px;border-radius:50%;
+      display:grid;place-items:center;
+      background:rgba(74,222,128,.15);
+      color:var(--green);
+      font-size:9px;
+    }
+
+    .check-item .where{
+      color:var(--muted);
+      font-size:7.3px;
+    }
+
+    /* ── AI 패널 ── */
+    .ai-grid{
+      height:calc(100% - 30px);
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:7px;
+    }
+
+    .ai-card{
+      padding:8px;
+      border-radius:13px;
+      background:rgba(3,7,18,.18);
+      border:1px solid var(--line2);
+    }
+
+    .ai-card strong{
+      display:block;
+      margin-bottom:4px;
+      font-size:9.8px;
+    }
+
+    .ai-card p{
+      margin:0;
+      color:#dbeafe;
+      font-size:8.4px;
+      line-height:1.42;
+    }
+
+    .ai-card .action{
+      margin-top:5px;
+      color:var(--cyan);
+      font-size:8.2px;
+    }
+
+    /* ── 히트맵 ── */
+    .heatmap-wrap{
+      height:calc(100% - 30px);
+      display:grid;
+      grid-template-columns:62px repeat(6,1fr);
+      grid-template-rows:17px repeat(4,1fr);
+      gap:4px;
+    }
+
+    .hm-label,.hm-head{
+      display:grid;
+      place-items:center;
+      color:var(--muted);
+      font-size:7.8px;
+    }
+
+    .hm-cell{
+      border-radius:8px;
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--line2);
+      display:grid;
+      place-items:center;
+      font-size:7.5px;
+      color:#dbeafe;
+    }
+
+    .hm1{background:rgba(74,222,128,.24);border-color:rgba(74,222,128,.38)}
+    .hm2{background:rgba(74,163,255,.30);border-color:rgba(74,163,255,.42)}
+    .hm3{background:rgba(250,204,21,.38);border-color:rgba(250,204,21,.52);color:#fff7c2}
+    .hm4{background:rgba(251,146,60,.44);border-color:rgba(251,146,60,.58);color:#fff0df}
+    .hm5{background:rgba(251,113,133,.58);border-color:rgba(251,113,133,.72);box-shadow:0 0 18px rgba(251,113,133,.32);color:#fff}
+
+    /* ── 포스트잇 3개 ── */
+    .notes-grid{
+      height:calc(100% - 30px);
+      display:grid;
+      grid-template-columns:1fr;
+      grid-template-rows:repeat(3,1fr);
+      gap:5px;
+    }
+
+    .note{
+      resize:none;
+      width:100%;
+      height:100%;
+      padding:7px;
+      border-radius:12px;
+      border:1px solid rgba(250,204,21,.22);
+      background:linear-gradient(145deg,rgba(250,204,21,.22),rgba(251,191,36,.11));
+      color:#fff8d5;
+      font-size:9.4px;
+      line-height:1.35;
+    }
+
+    /* ── 하단 결산 분석 ── */
+    .analytics{
+      display:grid;
+      grid-template-columns:1fr 1.12fr 1.16fr 1.16fr 1.05fr;
+      gap:7px;
+    }
+
+    .chart-card{
+      padding:7px;
+      border-radius:var(--radius);
+      background:rgba(255,255,255,.05);
+      border:1px solid var(--line);
+      overflow:hidden;
+    }
+
+    .chart-card h3{
+      margin:0 0 5px;
+      display:flex;
+      justify-content:space-between;
+      gap:6px;
+      font-size:10px;
+    }
+
+    .chart-card h3 span{
+      color:var(--muted);
+      font-size:7.8px;
+      font-weight:400;
+    }
+
+    .chart-foot{
+      margin-top:3px;
+      color:var(--muted);
+      font-size:9px;
+      line-height:1.25;
+    }
+
+    .chart-foot b{color:var(--text)}
+
+    .donut-wrap{
+      display:grid;
+      grid-template-columns:62px 1fr;
+      align-items:center;
+      gap:7px;
+      min-height:86px;
+    }
+
+    .donut{
+      width:60px;height:60px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      position:relative;
+      background:conic-gradient(var(--green) 0 var(--donut,72%), var(--red) var(--donut,72%) 86%, rgba(255,255,255,.13) 86% 100%);
+    }
+
+    .donut::after{
+      content:"";
+      position:absolute;
+      width:39px;height:39px;
+      border-radius:50%;
+      background:#0d1b2f;
+    }
+
+    .donut b{
+      position:relative;
+      z-index:1;
+      font-size:12px;
+    }
+
+    .legend-list{
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+    }
+
+    .legend-list div{
+      display:flex;
+      justify-content:space-between;
+      gap:6px;
+      color:#dbeafe;
+      font-size:8.8px;
+    }
+
+    .line-chart{
+      height:88px;
+      border-radius:12px;
+      background:
+        linear-gradient(to top, rgba(255,255,255,.08) 1px, transparent 1px) 0 0/100% 25%,
+        rgba(255,255,255,.025);
+      overflow:hidden;
+    }
+
+    .line-chart svg{width:100%;height:100%}
+    .line-chart text{font-size:7px;fill:var(--muted)}
+
+    .stack-list{
+      min-height:88px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:5px;
+    }
+
+    .stack-row{
+      display:grid;
+      grid-template-columns:40px 1fr 24px;
+      align-items:center;
+      gap:5px;
+      color:#dbeafe;
+      font-size:8.8px;
+    }
+
+    .stackbar{
+      height:8px;
+      border-radius:999px;
+      display:flex;
+      overflow:hidden;
+      background:rgba(255,255,255,.1);
+    }
+
+    .seg.done{background:var(--green)}
+    .seg.progress{background:var(--blue)}
+    .seg.delay{background:var(--red)}
+
+    .risk-matrix{
+      display:grid;
+      grid-template-columns:38px repeat(3,1fr);
+      grid-template-rows:16px repeat(3,1fr);
+      gap:4px;
+      height:88px;
+    }
+
+    .risk-label{
+      display:grid;
+      place-items:center;
+      color:var(--muted);
+      font-size:7px;
+    }
+
+    .risk-cell{
+      position:relative;
+      display:grid;
+      place-items:center;
+      border-radius:8px;
+      border:1px solid var(--line2);
+      background:rgba(255,255,255,.06);
+      color:#dbeafe;
+      font-size:7.8px;
+      overflow:hidden;
+    }
+
+    .risk-cell::after{
+      content:"";
+      position:absolute;
+      right:4px;
+      bottom:4px;
+      width:var(--bubble,9px);
+      height:var(--bubble,9px);
+      border-radius:50%;
+      background:rgba(255,255,255,.16);
+    }
+
+    .risk-cell.low{background:rgba(74,222,128,.12)}
+    .risk-cell.mid{background:rgba(250,204,21,.14)}
+    .risk-cell.high{background:rgba(251,113,133,.16)}
+
+    .bottleneck-list{
+      min-height:88px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:5px;
+    }
+
+    .bottleneck-row{
+      display:grid;
+      grid-template-columns:70px 1fr 28px;
+      align-items:center;
+      gap:5px;
+      font-size:7.9px;
+      color:#dbeafe;
+    }
+
+    .bottleneck-bar{
+      height:8px;
+      border-radius:999px;
+      background:rgba(255,255,255,.10);
+      overflow:hidden;
+    }
+
+    .bottleneck-bar i{
+      display:block;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--blue),var(--cyan));
+    }
+
+    .bottleneck-row.high .bottleneck-bar i{background:linear-gradient(90deg,var(--red),var(--orange))}
+    .bottleneck-row.mid .bottleneck-bar i{background:linear-gradient(90deg,var(--yellow),var(--orange))}
+    .bottleneck-row.low .bottleneck-bar i{background:linear-gradient(90deg,var(--green),var(--cyan))}
+    .bottleneck-row b{text-align:right;color:#fff}
+
+    .rank-list{
+      min-height:88px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .rank-row{
+      display:grid;
+      grid-template-columns:40px 1fr 26px;
+      align-items:center;
+      gap:5px;
+      font-size:8.8px;
+    }
+
+    .rank-bar{
+      height:7px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      overflow:hidden;
+    }
+
+    .rank-bar i{
+      display:block;
+      height:100%;
+      background:linear-gradient(90deg,var(--purple),var(--cyan));
+    }
+
+    /* ── 푸터 ── */
+    footer{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:5px 9px;
+      border-radius:13px;
+      background:rgba(255,255,255,.045);
+      border:1px solid var(--line);
+      color:var(--muted);
+      font-size:9.4px;
+    }
+
+    .footer-actions{
+      display:flex;
+      gap:6px;
+    }
+
+    /* ── 모달 ── */
+    .modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      place-items:center;
+      background:rgba(0,0,0,.56);
+      z-index:30;
+    }
+
+    .modal.show{display:grid}
+
+    .modal-box{
+      width:440px;
+      padding:20px;
+      border-radius:22px;
+      background:#0d1b2f;
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+    }
+
+    .modal-box h2{
+      margin:0 0 6px;
+      font-size:18px;
+    }
+
+    .modal-box p{
+      margin:0 0 14px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .modal-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+
+    .modal-field{
+      margin-bottom:8px;
+    }
+
+    .modal-field.full{grid-column:1 / -1}
+
+    .modal-field label{
+      display:block;
+      margin-bottom:5px;
+      color:#b8c7d9;
+      font-size:10px;
+    }
+
+    .modal-field input,
+    .modal-field select{
+      width:100%;
+      height:38px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      padding:0 10px;
+    }
+
+    .modal-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    /* ── 토스트 ── */
+    .toast{
+      position:fixed;
+      right:22px;
+      bottom:22px;
+      padding:11px 13px;
+      border-radius:14px;
+      background:#10243d;
+      border:1px solid var(--line);
+      color:var(--text);
+      font-size:12px;
+      opacity:0;
+      transform:translateY(12px);
+      transition:.25s;
+      z-index:40;
+    }
+
+    .toast.show{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+
+    /* ── Final polish: 업무 분장 To-do 영역 확장 ── */
+    .todo-panel{
+      padding:10px;
+    }
+
+    .todo-panel .panel-head{
+      align-items:flex-start;
+      margin-bottom:8px;
+    }
+
+    .todo-panel .mini-btn{
+      min-width:58px;
+      height:26px;
+      padding:0 10px;
+      white-space:nowrap;
+      flex-shrink:0;
+      font-size:9.5px;
+      line-height:1;
+    }
+
+    .todo-list{
+      gap:7px;
+    }
+
+    .todo{
+      grid-template-columns:15px 1fr auto;
+      gap:8px;
+      padding:8px 9px;
+      min-height:48px;
+    }
+
+    .todo-title{
+      font-size:10.2px;
+      font-weight:700;
+      white-space:normal;
+      line-height:1.25;
+    }
+
+    .todo-meta{
+      font-size:8.5px;
+      line-height:1.25;
+      margin-top:3px;
+    }
+
+    .todo .chip{
+      min-width:46px;
+      text-align:center;
+      font-size:7.8px;
+    }
+
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:999px}
+  
+/* ── 사원 모드 차별화: 개인 워크스페이스 느낌 강화 ── */
+    .dashboard.staff-mode .project-panel{
+      background:linear-gradient(145deg,rgba(74,163,255,.08),rgba(64,224,208,.045));
+      border-color:rgba(64,224,208,.18);
+    }
+
+    .dashboard.staff-mode .analysis-panel{
+      background:linear-gradient(145deg,rgba(167,139,250,.08),rgba(255,255,255,.035));
+    }
+
+    .dashboard.staff-mode .heatmap-panel h2::after{
+      content:" · 개인 비교";
+      color:var(--cyan);
+      font-size:9px;
+      font-weight:700;
+    }
+
+    .staff-today-card{
+      height:100%;
+      display:grid;
+      grid-template-rows:auto auto 1fr auto;
+      gap:6px;
+    }
+
+    .staff-profile-line{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+      padding:7px;
+      border-radius:12px;
+      background:rgba(255,255,255,.065);
+      border:1px solid var(--line2);
+    }
+
+    .staff-profile-line b{font-size:10px}
+    .staff-profile-line span{font-size:8px;color:var(--muted)}
+
+    .staff-focus-list{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:5px;
+    }
+
+    .staff-focus{
+      padding:7px;
+      border-radius:11px;
+      background:rgba(3,7,18,.18);
+      border:1px solid var(--line2);
+    }
+
+    .staff-focus strong{display:block;font-size:13px;color:#fff;line-height:1}
+    .staff-focus span{display:block;margin-top:4px;font-size:7.6px;color:var(--muted)}
+
+    .staff-routine{
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      overflow:auto;
+      min-height:0;
+    }
+
+    .routine-item{
+      display:grid;
+      grid-template-columns:36px 1fr auto;
+      gap:6px;
+      align-items:center;
+      padding:6px;
+      border-radius:10px;
+      background:rgba(255,255,255,.055);
+      border:1px solid var(--line2);
+      font-size:8.4px;
+    }
+
+    .routine-item b{color:#fff;font-size:8.6px}
+    .routine-item span{color:var(--muted);font-size:7.5px}
+
+    .staff-privacy-note{
+      padding:6px;
+      border-radius:10px;
+      background:rgba(74,222,128,.10);
+      border:1px solid rgba(74,222,128,.18);
+      color:#d9ffe5;
+      font-size:8.2px;
+      line-height:1.32;
+    }
+
+    
+/* ───────────────── 사원 전용 Customer Success Workspace ───────────────── */
+    .staff-mode .project-panel h2,
+    .staff-mode .analysis-panel h2,
+    .staff-mode .heatmap-panel h2,
+    .staff-mode .ai-panel h2{color:#dffcff}
+
+    .staff-company-box,
+    .personal-todo-box{
+      padding:7px;
+      border-radius:13px;
+      border:1px solid var(--line2);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .staff-company-box{
+      background:linear-gradient(145deg,rgba(74,163,255,.13),rgba(64,224,208,.07));
+      border-color:rgba(74,163,255,.25);
+    }
+
+    .personal-todo-box{
+      background:linear-gradient(145deg,rgba(250,204,21,.22),rgba(167,139,250,.08));
+      border-color:rgba(250,204,21,.25);
+    }
+
+    .staff-section-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+      font-size:9.5px;
+      color:#fff;
+      font-weight:900;
+    }
+
+    .staff-section-title span{font-size:7.8px;color:var(--muted);font-weight:500}
+
+    .staff-work-item{
+      display:grid;
+      grid-template-columns:14px 1fr auto;
+      gap:6px;
+      align-items:center;
+      padding:6px;
+      border-radius:10px;
+      background:rgba(3,7,18,.18);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .staff-work-item input[type="checkbox"]{accent-color:var(--cyan)}
+    .staff-work-title{font-size:9px;color:#fff;line-height:1.25}
+    .staff-work-meta{margin-top:2px;font-size:7.8px;color:var(--muted)}
+
+    .personal-add-row{display:grid;grid-template-columns:1fr 28px;gap:5px}
+    .personal-add-row input{
+      height:25px;border-radius:8px;border:1px solid rgba(250,204,21,.25);
+      background:rgba(3,7,18,.22);color:#fff8d5;padding:0 7px;font-size:8.5px;
+    }
+    .personal-add-row button{border-radius:8px;background:rgba(250,204,21,.26);color:#fff8d5;border:1px solid rgba(250,204,21,.28);font-weight:900}
+
+    .personal-list{display:flex;flex-direction:column;gap:4px;max-height:80px;overflow:auto;padding-right:2px}
+    .personal-item{display:grid;grid-template-columns:14px 1fr 16px;gap:5px;align-items:center;font-size:8.6px;color:#fff8d5;padding:4px 5px;border-radius:8px;background:rgba(255,255,255,.065)}
+    .personal-item input{accent-color:var(--yellow)}
+    .personal-item.done span{text-decoration:line-through;color:rgba(255,248,213,.55)}
+    .personal-item button{width:16px;height:16px;border-radius:6px;background:rgba(255,255,255,.08);color:#fff8d5;font-size:9px;padding:0}
+
+    .customer-queue{
+      height:calc(100% - 30px);
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:6px;
+      min-height:0;
+    }
+    .queue-col{min-height:0;padding:6px;border-radius:13px;background:rgba(3,7,18,.18);border:1px solid var(--line2);display:flex;flex-direction:column;gap:5px}
+    .queue-title{display:flex;justify-content:space-between;align-items:center;font-size:8.8px;font-weight:900;color:#fff;margin-bottom:1px}
+    .queue-title span{font-size:7.2px;color:var(--muted);font-weight:500}
+    .queue-card{padding:6px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid var(--line2);font-size:8.2px;line-height:1.28;color:#dbeafe}
+    .queue-card b{display:block;color:#fff;font-size:8.7px;margin-bottom:2px}
+    .queue-card .q-meta{display:flex;justify-content:space-between;gap:4px;margin-top:4px;color:var(--muted);font-size:7.2px}
+    .queue-card.urgent{border-color:rgba(251,113,133,.45);background:rgba(251,113,133,.13)}
+    .queue-card.vip{border-color:rgba(167,139,250,.45);background:rgba(167,139,250,.13)}
+    .queue-card.done{border-color:rgba(74,222,128,.36);background:rgba(74,222,128,.11)}
+
+    .sns-inbox{height:calc(100% - 30px);display:flex;flex-direction:column;gap:5px;min-height:0;overflow:auto;padding-right:2px}
+    .sns-row{display:grid;grid-template-columns:38px 54px 1fr 42px;gap:5px;align-items:center;padding:6px;border-radius:10px;background:rgba(255,255,255,.055);border:1px solid var(--line2);font-size:8.2px;color:#dbeafe}
+    .sns-row b{color:#fff;font-size:8.5px}.sns-row span{color:var(--muted);font-size:7.5px}
+    .status-vip{color:#eadfff!important;background:rgba(167,139,250,.16);border:1px solid rgba(167,139,250,.24);border-radius:999px;padding:2px 4px;text-align:center}
+    .status-warn{color:#ffd6de!important;background:rgba(251,113,133,.16);border:1px solid rgba(251,113,133,.25);border-radius:999px;padding:2px 4px;text-align:center}
+    .status-normal{color:#dcefff!important;background:rgba(74,163,255,.16);border:1px solid rgba(74,163,255,.25);border-radius:999px;padding:2px 4px;text-align:center}
+    .status-done{color:#c8ffd8!important;background:rgba(74,222,128,.14);border:1px solid rgba(74,222,128,.25);border-radius:999px;padding:2px 4px;text-align:center}
+
+    .staff-mode .ai-grid{grid-template-columns:repeat(4,1fr)}
+    .staff-mode .ai-card{background:linear-gradient(145deg,rgba(64,224,208,.10),rgba(74,163,255,.055))}
+    .staff-mode .chart-card h3{color:#dffcff}
+    .keyword-cloud{display:flex;flex-wrap:wrap;gap:5px;align-content:center;min-height:88px}
+    .keyword-cloud span{padding:5px 7px;border-radius:999px;background:rgba(64,224,208,.12);border:1px solid rgba(64,224,208,.22);font-size:8.6px;color:#dffcff}
+
+
+    /* ─────────────────────────────────────────
+       안정화 패치 v07
+       - 06의 급격한 zone 재배치를 되돌리고 05의 안정 구조 유지
+       - 기능 삭제 없이 카드 구분감만 강화
+       - 사원 모드에서 각 영역의 목적이 시각적으로 분리되도록 처리
+    ───────────────────────────────────────── */
+    .dashboard.staff-mode .panel{
+      position:relative;
+      box-shadow:0 12px 32px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.035);
+    }
+
+    .dashboard.staff-mode .panel-head{
+      margin:-1px -1px 8px;
+      padding:8px 9px 7px;
+      border-radius:14px 14px 10px 10px;
+      border-bottom:1px solid rgba(255,255,255,.09);
+      background:linear-gradient(90deg,rgba(255,255,255,.075),rgba(255,255,255,.025));
+    }
+
+    .dashboard.staff-mode .todo-panel{
+      background:linear-gradient(145deg,rgba(74,163,255,.14),rgba(6,18,34,.72));
+      border-color:rgba(74,163,255,.34);
+    }
+
+    .dashboard.staff-mode .project-panel{
+      background:linear-gradient(145deg,rgba(64,224,208,.13),rgba(6,18,34,.72));
+      border-color:rgba(64,224,208,.34);
+    }
+
+    .dashboard.staff-mode .analysis-panel{
+      background:linear-gradient(145deg,rgba(167,139,250,.14),rgba(6,18,34,.72));
+      border-color:rgba(167,139,250,.34);
+    }
+
+    .dashboard.staff-mode .heatmap-panel{
+      background:linear-gradient(145deg,rgba(20,184,166,.13),rgba(6,18,34,.72));
+      border-color:rgba(20,184,166,.34);
+    }
+
+    .dashboard.staff-mode .comm-panel{
+      background:linear-gradient(145deg,rgba(251,146,60,.12),rgba(6,18,34,.72));
+      border-color:rgba(251,146,60,.32);
+    }
+
+    .dashboard.staff-mode .ai-panel{
+      background:linear-gradient(145deg,rgba(139,92,246,.13),rgba(6,18,34,.72));
+      border-color:rgba(167,139,250,.32);
+    }
+
+    .dashboard.staff-mode .notes-panel{
+      background:linear-gradient(145deg,rgba(250,204,21,.11),rgba(6,18,34,.72));
+      border-color:rgba(250,204,21,.30);
+    }
+
+    .dashboard.staff-mode .staff-company-box{
+      border:1px solid rgba(74,163,255,.42);
+      box-shadow:0 0 0 1px rgba(74,163,255,.08),0 10px 24px rgba(74,163,255,.08);
+      background:linear-gradient(145deg,rgba(74,163,255,.20),rgba(8,22,42,.62));
+    }
+
+    .dashboard.staff-mode .personal-todo-box{
+      border:1px solid rgba(250,204,21,.45);
+      box-shadow:0 0 0 1px rgba(250,204,21,.10),0 10px 24px rgba(250,204,21,.08);
+      background:linear-gradient(145deg,rgba(250,204,21,.25),rgba(88,63,16,.18));
+    }
+
+    .dashboard.staff-mode .staff-section-title{
+      padding-bottom:5px;
+      border-bottom:1px dashed rgba(255,255,255,.13);
+    }
+
+    .dashboard.staff-mode .staff-work-item,
+    .dashboard.staff-mode .queue-card,
+    .dashboard.staff-mode .sns-row,
+    .dashboard.staff-mode .ai-card,
+    .dashboard.staff-mode .feed-item,
+    .dashboard.staff-mode .chat-msg{
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+    }
+
+    .dashboard.staff-mode .staff-focus{
+      border-color:rgba(64,224,208,.20);
+      background:rgba(3,7,18,.26);
+    }
+
+    .dashboard.staff-mode .routine-item{
+      border-color:rgba(255,255,255,.12);
+      background:rgba(255,255,255,.07);
+    }
+
+    .dashboard.staff-mode .analytics .chart-card{
+      background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(3,7,18,.20));
+      border-color:rgba(255,255,255,.13);
+    }
+
+    .dashboard.staff-mode .kpi{
+      border-color:rgba(64,224,208,.18);
+      background:linear-gradient(145deg,rgba(64,224,208,.075),rgba(255,255,255,.04));
+    }
+
+  
+
+    /* ─────────────────────────────────────────
+       v08 화면 안정화 패치
+       - 전체 대시보드는 16:9 고정
+       - 긴 내용은 카드 내부에서만 스크롤
+       - 사원 업무 체크리스트/근무 보드 내용 잘림 방지
+    ───────────────────────────────────────── */
+    .dashboard.staff-mode{
+      overflow:hidden !important;
+    }
+
+    .dashboard.staff-mode .todo-list{
+      height:calc(100% - 38px) !important;
+      max-height:calc(100% - 38px) !important;
+      overflow:hidden !important;
+      display:grid !important;
+      grid-template-rows:minmax(0,1.35fr) minmax(0,.85fr) !important;
+      gap:7px !important;
+      padding-right:0 !important;
+    }
+
+    .dashboard.staff-mode .staff-company-box,
+    .dashboard.staff-mode .personal-todo-box{
+      min-height:0 !important;
+      overflow:hidden !important;
+    }
+
+    .staff-work-scroll{
+      min-height:0;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      padding-right:2px;
+    }
+
+    .dashboard.staff-mode .staff-work-item{
+      padding:5px 6px !important;
+      grid-template-columns:13px minmax(0,1fr) auto !important;
+    }
+
+    .dashboard.staff-mode .staff-work-title{
+      font-size:8.55px !important;
+      line-height:1.22 !important;
+      white-space:normal !important;
+      word-break:keep-all !important;
+    }
+
+    .dashboard.staff-mode .staff-work-meta{
+      font-size:7.35px !important;
+      line-height:1.25 !important;
+      white-space:nowrap !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+      max-width:100% !important;
+    }
+
+    .dashboard.staff-mode .personal-list{
+      min-height:0 !important;
+      max-height:none !important;
+      overflow:auto !important;
+    }
+
+    .dashboard.staff-mode .project-list{
+      height:calc(100% - 38px) !important;
+      display:block !important;
+      overflow:hidden !important;
+    }
+
+    .dashboard.staff-mode .staff-today-card{
+      height:100% !important;
+      min-height:0 !important;
+      display:grid !important;
+      grid-template-rows:auto auto minmax(0,1fr) auto auto !important;
+      gap:5px !important;
+      overflow:hidden !important;
+    }
+
+    .dashboard.staff-mode .staff-profile-line{
+      padding:6px !important;
+      align-items:flex-start !important;
+    }
+
+    .dashboard.staff-mode .staff-profile-line b{
+      display:block !important;
+      font-size:8.7px !important;
+      line-height:1.2 !important;
+      white-space:nowrap !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+      max-width:170px !important;
+    }
+
+    .dashboard.staff-mode .staff-profile-line span{
+      display:block !important;
+      font-size:7.2px !important;
+      line-height:1.25 !important;
+    }
+
+    .dashboard.staff-mode .staff-focus-list{
+      grid-template-columns:repeat(4,1fr) !important;
+      gap:4px !important;
+    }
+
+    .dashboard.staff-mode .staff-focus{
+      padding:5px !important;
+      min-width:0 !important;
+    }
+
+    .dashboard.staff-mode .staff-focus strong{
+      font-size:11.5px !important;
+    }
+
+    .dashboard.staff-mode .staff-focus span{
+      font-size:6.7px !important;
+      white-space:nowrap !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+    }
+
+    .dashboard.staff-mode .staff-routine{
+      min-height:0 !important;
+      overflow:auto !important;
+      padding-right:2px !important;
+      border-radius:10px !important;
+    }
+
+    .dashboard.staff-mode .routine-item{
+      grid-template-columns:31px minmax(0,1fr) auto !important;
+      padding:5px !important;
+      gap:5px !important;
+    }
+
+    .dashboard.staff-mode .routine-item div{
+      min-width:0 !important;
+      font-size:7.8px !important;
+      line-height:1.2 !important;
+      white-space:nowrap !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+    }
+
+    .dashboard.staff-mode .routine-item b{
+      font-size:7.8px !important;
+    }
+
+    .dashboard.staff-mode .routine-item div span{
+      display:block !important;
+      font-size:6.8px !important;
+      white-space:nowrap !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+    }
+
+    .staff-focus-check-grid{
+      display:grid;
+      grid-template-columns:1fr 1.25fr;
+      gap:5px;
+      min-height:0;
+    }
+
+    .staff-timer-card,
+    .staff-close-card{
+      min-width:0;
+      padding:6px;
+      border-radius:11px;
+      border:1px solid var(--line2);
+      overflow:hidden;
+    }
+
+    .staff-timer-card{background:rgba(255,255,255,.06)}
+    .staff-close-card{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.24)}
+    .staff-mini-label{font-size:7.4px;color:var(--muted);margin-bottom:2px;white-space:nowrap}
+    .staff-mini-label.warn{color:#fde68a}
+    .staff-timer-time{font-size:14px;font-weight:900;line-height:1.05}
+    .staff-mini-desc{font-size:7.1px;color:#dbeafe;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+    .staff-close-list{font-size:7.05px;line-height:1.35;color:#fff8d5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    .dashboard.staff-mode .staff-privacy-note{
+      padding:5px 6px !important;
+      font-size:7.1px !important;
+      line-height:1.25 !important;
+      max-height:30px !important;
+      overflow:hidden !important;
+    }
+
+    .dashboard.staff-mode .comm-scroll,
+    .dashboard.staff-mode .sns-inbox,
+    .dashboard.staff-mode .customer-queue,
+    .dashboard.staff-mode .hub-action-list{
+      min-height:0 !important;
+      overflow:auto !important;
+    }
+
+
+/* ─────────────────────────────────────────
+   v09 Staff To-do Visibility Patch
+   - 사원 모드에서 투두 패널을 세로 2칸으로 확장
+   - 회사 업무 / 개인 To-do가 둘 다 보이도록 내부 높이 재분배
+   - 작은 해상도에서도 텍스트 잘림 최소화
+───────────────────────────────────────── */
+.dashboard.staff-mode .main-grid{
+  grid-template-columns:1.2fr 1fr 1fr 1.12fr 1.12fr !important;
+  grid-template-rows:minmax(0,1fr) 124px !important;
+  grid-template-areas:
+    "todo project analytics comm comm"
+    "todo ai heatmap heatmap notes" !important;
+}
+
+.dashboard.staff-mode .todo-panel{
+  padding:7px !important;
+  overflow:hidden !important;
+  min-width:0 !important;
+}
+
+.dashboard.staff-mode .todo-panel .panel-head{
+  margin:-1px -1px 7px !important;
+  padding:7px 8px 6px !important;
+}
+
+.dashboard.staff-mode #todoList.todo-list{
+  height:calc(100% - 36px) !important;
+  max-height:calc(100% - 36px) !important;
+  display:grid !important;
+  grid-template-rows:minmax(0,1.05fr) minmax(118px,.95fr) !important;
+  gap:7px !important;
+  overflow:hidden !important;
+}
+
+.dashboard.staff-mode .staff-company-box,
+.dashboard.staff-mode .personal-todo-box{
+  min-height:0 !important;
+  overflow:hidden !important;
+  padding:7px !important;
+}
+
+.dashboard.staff-mode .staff-work-scroll{
+  min-height:0 !important;
+  overflow:auto !important;
+}
+
+.dashboard.staff-mode .personal-todo-box{
+  display:grid !important;
+  grid-template-rows:auto 27px minmax(0,1fr) !important;
+}
+
+.dashboard.staff-mode .personal-list{
+  min-height:0 !important;
+  max-height:none !important;
+  overflow:auto !important;
+  padding-right:2px !important;
+}
+
+.dashboard.staff-mode .personal-item{
+  min-height:24px !important;
+  grid-template-columns:14px minmax(0,1fr) 17px !important;
+}
+
+.dashboard.staff-mode .personal-item span{
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+.dashboard.staff-mode .staff-work-title{
+  font-size:8.8px !important;
+  line-height:1.25 !important;
+}
+
+.dashboard.staff-mode .staff-work-meta{
+  font-size:7.45px !important;
+}
+
+.dashboard.staff-mode .chip{
+  font-size:7.1px !important;
+  padding:2.5px 4.5px !important;
+}
+
+.dashboard.staff-mode .ai-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:5px !important;
+}
+
+.dashboard.staff-mode .ai-card{
+  padding:6px !important;
+}
+
+.dashboard.staff-mode .ai-card p{
+  font-size:7.7px !important;
+  line-height:1.32 !important;
+}
+
+@media (max-width:1320px){
+  .screen{
+    min-width:1180px !important;
+    min-height:664px !important;
+  }
+  .dashboard.staff-mode .main-grid{
+    grid-template-columns:1.26fr .98fr .98fr 1.05fr 1.05fr !important;
+  }
+  .dashboard.staff-mode .staff-work-title{font-size:8.35px !important;}
+  .dashboard.staff-mode .staff-work-meta{font-size:7.1px !important;}
+}
+
+  
+
+
+/* ─────────────────────────────────────────
+   v22 Staff Page UI Stability Patch
+   - 글자 잘림 방지: nowrap/ellipsis 의존 최소화
+   - 16:9 유지 + 해상도별 화면 안정화
+   - 사원 페이지 카드 hierarchy/구분감 개선
+   - 내부 스크롤은 카드 안에서만 발생
+───────────────────────────────────────── */
+html, body{ width:100%; height:100%; }
+body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+
+.screen{
+  width:min(calc(100vw - 20px),177.78vh) !important;
+  height:min(calc(100vh - 20px),56.25vw) !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  aspect-ratio:16/9;
+}
+
+.dashboard{
+  grid-template-rows:48px 40px minmax(0,1fr) 142px 32px !important;
+  gap:7px !important;
+}
+
+.dashboard *{ min-width:0; }
+.panel, .chart-card, .micro-card, .comm-box{
+  min-height:0 !important;
+}
+
+.panel h2, .chart-card h3, .staff-section-title, .comm-box-title{
+  letter-spacing:-.02em;
+}
+
+.desc, .todo-meta, .staff-work-meta, .routine-item span,
+.staff-profile-line span, .chart-foot, .ai-card p, .feed-item span,
+.chat-msg span, .queue-card, .sns-row div{
+  overflow-wrap:anywhere;
+  word-break:keep-all;
+}
+
+/* 사원 페이지 핵심 레이아웃: 정보가 눌리지 않도록 비율 재조정 */
+.dashboard.staff-mode .main-grid{
+  grid-template-columns:1.28fr 1.05fr 1.05fr 1.18fr 1.18fr !important;
+  grid-template-rows:minmax(0,1fr) 128px !important;
+  grid-template-areas:
+    "todo project analytics comm comm"
+    "todo ai heatmap heatmap notes" !important;
+  gap:8px !important;
+}
+
+.dashboard.staff-mode .panel{
+  border-width:1px;
+  box-shadow:0 14px 34px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.045) !important;
+}
+
+.dashboard.staff-mode .panel-head{
+  min-height:38px;
+  margin:-1px -1px 8px !important;
+  padding:7px 9px !important;
+  align-items:flex-start !important;
+}
+
+.dashboard.staff-mode .panel h2{ font-size:11px !important; line-height:1.18 !important; }
+.dashboard.staff-mode .desc{ font-size:8.3px !important; line-height:1.25 !important; }
+
+/* 오늘 내 업무 체크리스트 */
+.dashboard.staff-mode #todoList.todo-list{
+  height:calc(100% - 42px) !important;
+  max-height:calc(100% - 42px) !important;
+  grid-template-rows:minmax(0,1.18fr) minmax(122px,.82fr) !important;
+  gap:8px !important;
+  overflow:hidden !important;
+}
+
+.dashboard.staff-mode .staff-company-box,
+.dashboard.staff-mode .personal-todo-box{
+  padding:8px !important;
+  gap:6px !important;
+  border-radius:14px !important;
+}
+
+.dashboard.staff-mode .staff-section-title{
+  font-size:9.4px !important;
+  line-height:1.22 !important;
+  align-items:flex-start !important;
+}
+.dashboard.staff-mode .staff-section-title span{
+  font-size:7.2px !important;
+  line-height:1.22 !important;
+  text-align:right;
+  max-width:48%;
+  white-space:normal !important;
+}
+
+.dashboard.staff-mode .staff-work-scroll{
+  min-height:0 !important;
+  overflow:auto !important;
+  padding-right:3px !important;
+}
+.dashboard.staff-mode .staff-work-item{
+  grid-template-columns:14px minmax(0,1fr) 45px !important;
+  align-items:start !important;
+  padding:6px 7px !important;
+  gap:6px !important;
+  min-height:42px !important;
+}
+.dashboard.staff-mode .staff-work-title{
+  font-size:8.75px !important;
+  line-height:1.28 !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+.dashboard.staff-mode .staff-work-meta{
+  margin-top:2px !important;
+  font-size:7.15px !important;
+  line-height:1.25 !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+.dashboard.staff-mode .chip{
+  align-self:start;
+  min-width:40px !important;
+  padding:3px 4px !important;
+  font-size:6.8px !important;
+  line-height:1.1 !important;
+}
+
+.dashboard.staff-mode .personal-todo-box{
+  grid-template-rows:auto 26px minmax(0,1fr) !important;
+}
+.dashboard.staff-mode .personal-add-row input{ font-size:8px !important; }
+.dashboard.staff-mode .personal-item{
+  min-height:23px !important;
+  padding:4px 5px !important;
+  font-size:8px !important;
+}
+.dashboard.staff-mode .personal-item span{
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  line-height:1.2 !important;
+}
+
+/* 나의 오늘 근무 보드 */
+.dashboard.staff-mode .project-list{
+  height:calc(100% - 42px) !important;
+  overflow:hidden !important;
+}
+.dashboard.staff-mode .staff-today-card{
+  grid-template-rows:auto auto minmax(0,1fr) auto !important;
+  gap:6px !important;
+}
+.dashboard.staff-mode .staff-profile-line{
+  padding:7px !important;
+  gap:6px !important;
+}
+.dashboard.staff-mode .staff-profile-line b{
+  max-width:none !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  font-size:8.6px !important;
+  line-height:1.25 !important;
+}
+.dashboard.staff-mode .staff-profile-line span{
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+.dashboard.staff-mode .staff-focus-list{ grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+.dashboard.staff-mode .staff-focus{ padding:6px !important; }
+.dashboard.staff-mode .staff-focus strong{ font-size:12px !important; }
+.dashboard.staff-mode .staff-focus span{
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  line-height:1.15 !important;
+}
+.dashboard.staff-mode .routine-item{
+  grid-template-columns:33px minmax(0,1fr) 42px !important;
+  align-items:start !important;
+}
+.dashboard.staff-mode .routine-item div,
+.dashboard.staff-mode .routine-item div span{
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+.dashboard.staff-mode .staff-focus-check-grid{ display:none !important; }
+.dashboard.staff-mode .staff-privacy-note{ display:none !important; }
+
+/* SNS Inbox: 상태 뱃지가 글자를 누르지 않게 정리 */
+.dashboard.staff-mode .sns-row{
+  grid-template-columns:34px 48px minmax(0,1fr) 48px !important;
+  gap:5px !important;
+  padding:6px !important;
+  align-items:start !important;
+}
+.dashboard.staff-mode .sns-row b,
+.dashboard.staff-mode .sns-row span{ line-height:1.2 !important; }
+.dashboard.staff-mode .sns-row div{
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  line-height:1.22 !important;
+}
+.status-vip,.status-warn,.status-normal,.status-done{
+  white-space:normal !important;
+  line-height:1.1 !important;
+  padding:2px 3px !important;
+}
+
+/* 커뮤니케이션 카드 가독성 */
+.dashboard.staff-mode .comm-split{
+  grid-template-columns:1.04fr 1.06fr .9fr !important;
+  gap:7px !important;
+}
+.dashboard.staff-mode .chat-msg,
+.dashboard.staff-mode .feed-item,
+.dashboard.staff-mode .hub-action{
+  line-height:1.32 !important;
+}
+.dashboard.staff-mode .chat-msg{ grid-template-columns:38px minmax(0,1fr) !important; align-items:start !important; }
+.dashboard.staff-mode .chat-msg span,
+.dashboard.staff-mode .feed-item span{
+  white-space:normal !important;
+  overflow:visible !important;
+}
+
+/* 하단 분석 카드: 텍스트 겹침 방지 */
+.dashboard.staff-mode .analytics{
+  grid-template-columns:1fr 1fr 1fr 1fr 1fr !important;
+  gap:7px !important;
+}
+.dashboard.staff-mode .chart-card{ padding:7px !important; }
+.dashboard.staff-mode .chart-card h3{
+  font-size:9.4px !important;
+  line-height:1.15 !important;
+  margin-bottom:5px !important;
+}
+.dashboard.staff-mode .chart-card h3 span{ font-size:7px !important; }
+.dashboard.staff-mode .chart-foot{
+  font-size:7.7px !important;
+  line-height:1.22 !important;
+}
+.dashboard.staff-mode .donut-wrap{
+  grid-template-columns:54px minmax(0,1fr) !important;
+  gap:6px !important;
+  min-height:76px !important;
+}
+.dashboard.staff-mode .donut{ width:52px !important; height:52px !important; }
+.dashboard.staff-mode .donut::after{ width:34px !important; height:34px !important; }
+.dashboard.staff-mode .donut b{ font-size:10px !important; }
+.dashboard.staff-mode .legend-list div,
+.dashboard.staff-mode .stack-row,
+.dashboard.staff-mode .keyword-cloud span{ font-size:7.4px !important; }
+.dashboard.staff-mode .line-chart,
+.dashboard.staff-mode .stack-list,
+.dashboard.staff-mode .keyword-cloud{ min-height:76px !important; height:76px !important; }
+.dashboard.staff-mode .keyword-cloud{ overflow:auto; align-content:flex-start; }
+
+/* 작은 화면에서도 화면 밖으로 잘리지 않도록 전체 스케일 조정 */
+@media (max-width:1200px), (max-height:700px){
+  .stage{ padding:6px !important; }
+  .screen{
+    width:calc(100vw - 12px) !important;
+    height:calc((100vw - 12px) * 9 / 16) !important;
+    max-height:calc(100vh - 12px) !important;
+    max-width:calc((100vh - 12px) * 16 / 9) !important;
+  }
+  .dashboard{ padding:8px !important; gap:6px !important; }
+  .dashboard.staff-mode .main-grid{ gap:6px !important; }
+  .dashboard.staff-mode .panel-head{ padding:6px 7px !important; }
+  .dashboard.staff-mode .staff-work-title{ font-size:8.25px !important; }
+  .dashboard.staff-mode .staff-work-meta{ font-size:6.9px !important; }
+  .dashboard.staff-mode .chart-card h3{ font-size:8.8px !important; }
+}
+
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="screen">
+      <!-- ── 로그인 페이지 ── -->
+      <section class="login-page" id="loginPage">
+        <div class="login-left">
+          <div class="system-badge"><span class="pulse"></span> Railway Online Ready · Enterprise Workflow OS</div>
+          <div class="login-copy">
+            <h1>One Login,<br/>Role-based Dashboard</h1>
+            <p>
+              Google 계정 또는 사내 계정으로 접속한 뒤, 권한에 따라 관리자용 팀 관제 화면과 사원용 개인 업무 화면을 구분해서 보여주는
+              업무 대시보드입니다. 한 화면 안에서 업무 배정, 진행률, 채팅, 피드, 포스트잇, 결산 분석, 배포 상태를 확인합니다.
+            </p>
+          </div>
+          <div class="login-feature-grid">
+            <div class="login-feature"><strong>Admin</strong><span>업무 추가·담당자 지정·팀 전체 workload</span></div>
+            <div class="login-feature"><strong>Staff</strong><span>내 업무·완료 처리·개인 결산 중심</span></div>
+            <div class="login-feature"><strong>Google</strong><span>권한 선택 후 Google로 계속하기</span></div>
+            <div class="login-feature"><strong>Online</strong><span>GitHub/Railway/Gmail/API 상태 표시</span></div>
+          </div>
+        </div>
+
+        <div class="login-panel">
+          <h2>서비스 로그인</h2>
+          <p>역할을 먼저 선택한 뒤 관리자/사원 계정 또는 Google 계정으로 접속합니다.</p>
+
+          <div class="role-cards">
+            <button class="role-card active" id="roleAdmin" onclick="selectRole('admin')">
+              <strong>관리자 / 팀장</strong>
+              <span>업무 배정, 팀원별 업무량, 전체 결산 분석</span>
+            </button>
+            <button class="role-card" id="roleStaff" onclick="selectRole('staff')">
+              <strong>사원</strong>
+              <span>내 업무 진행률, 완료 처리, 팀 공지 확인</span>
+            </button>
+          </div>
+
+          <div class="field">
+            <label>아이디</label>
+            <input id="loginId" value="admin" />
+          </div>
+          <div class="field">
+            <label>비밀번호</label>
+            <input id="loginPw" type="password" value="1234" />
+          </div>
+
+          <div class="login-actions">
+            <button class="primary-btn" onclick="loginWithAccount()">사내 계정 로그인</button>
+            <button class="secondary-btn" onclick="fillDemo()">데모 계정 자동입력</button>
+          </div>
+          <button class="google-btn" onclick="googleLogin()">G Google로 계속하기</button>
+
+          <div class="login-note">
+            관리자: admin / 1234 · 사원: staff / 1234<br/>
+            Google 로그인은 별도 화면이 아니라 같은 로그인 페이지의 옵션으로 배치했습니다.
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 대시보드 화면 ── -->
+      <main class="dashboard" id="dashboard">
+        <!-- ── 헤더 ── -->
+        <header>
+          <div class="brand">
+            <div class="logo">OS</div>
+            <div class="title">
+              <h1>Workflow OS · Operations Command Center</h1>
+              <p id="roleText">관리자 모드 · 업무 배정 / 팀 관제 / 결산 분석</p>
+            </div>
+          </div>
+          <div class="led-notice" aria-label="긴급 공지 전광판">
+            <span class="led-label">긴급 공지</span>
+            <div class="led-window">
+              <div class="led-track">
+                보안 패치 재기동 13:00~13:20 예정 <span class="led-dot">●</span> 14:00 PM 회의와 QA 리뷰 일정 충돌 <span class="led-dot">●</span> 17:00 전 결산 리포트 Gmail 발송 확인
+              </div>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button class="pill blue" onclick="toast('Google OAuth 연결 상태: Ready')">Continue with Google</button>
+            <div class="pill purple" id="roleBadge">관리자</div>
+            <div class="pill green"><span class="pulse"></span> Online</div>
+            <div class="pill">Alerts <span id="noticeCount">3</span></div>
+            <button class="pill red" onclick="logout()">로그아웃</button>
+          </div>
+        </header>
+
+        <!-- ── KPI 카드 ── -->
+        <section class="kpis">
+          <div class="kpi blue">
+            <div class="kpi-top"><small>오늘 업무 상태</small><span class="delta" id="taskDelta">+3</span></div>
+            <strong id="kpiTotal">18</strong>
+            <div class="kpi-text" id="taskKpiText">완료 7 · 진행 8 · 지연 3<br/>다음: QA 승인 확인</div>
+            <div class="mini-row"><span>처리율</span><div class="tiny-bar"><div class="tiny-fill" id="taskRateBar" style="width:61%"></div></div><span id="taskRate">61%</span></div>
+          </div>
+
+          <div class="kpi green">
+            <div class="kpi-top"><small>완료율</small><span class="delta">자동갱신</span></div>
+            <strong id="kpiDoneRate">83%</strong>
+            <div class="kpi-text">완료 체크 시 즉시 반영<br/>부서 평균 대비 비교</div>
+            <div class="spark" id="doneSpark"><i style="height:38%"></i><i style="height:52%"></i><i style="height:70%"></i><i style="height:83%"></i></div>
+          </div>
+
+          <div class="kpi red">
+            <div class="kpi-top"><small>SLA 위험</small><span class="delta warn">즉시</span></div>
+            <strong id="kpiSla">3</strong>
+            <div class="kpi-text">보안패치 18m<br/>QA검토 1.4h</div>
+            <div class="mini-row"><span>조치</span><div class="tiny-bar"><div class="tiny-fill" style="width:86%;background:var(--red)"></div></div><span>High</span></div>
+          </div>
+
+          <div class="kpi yellow">
+            <div class="kpi-top"><small>병목 지점</small><span class="delta warn">주의</span></div>
+            <strong>QA</strong>
+            <div class="kpi-text">검토 단계 전환율 낮음<br/>리뷰 인력 분산 필요</div>
+            <div class="spark"><i style="height:26%;background:var(--yellow)"></i><i style="height:72%;background:var(--red)"></i><i style="height:48%;background:var(--yellow)"></i></div>
+          </div>
+
+          <div class="kpi purple">
+            <div class="kpi-top"><small>예측 지연 업무</small><span class="delta warn">AI</span></div>
+            <strong>2</strong>
+            <div class="kpi-text">보안 리뷰 · QA 승인<br/>17시 전 조치 권장</div>
+            <div class="mini-row"><span>예측</span><div class="tiny-bar"><div class="tiny-fill" style="width:74%;background:linear-gradient(90deg,var(--purple),var(--cyan))"></div></div><span>74%</span></div>
+          </div>
+
+          <div class="kpi orange">
+            <div class="kpi-top"><small>자동화 절감</small><span class="delta">+1.2h</span></div>
+            <strong>4.2h</strong>
+            <div class="kpi-text">결산 자동작성<br/>Gmail 발송 대기</div>
+            <div class="spark"><i style="height:38%;background:var(--orange)"></i><i style="height:72%;background:var(--green)"></i><i style="height:88%;background:var(--green)"></i></div>
+          </div>
+
+          <div class="kpi blue">
+            <div class="kpi-top"><small>일정 충돌</small><span class="delta warn">1건</span></div>
+            <strong>14:00</strong>
+            <div class="kpi-text">PM 회의 / QA 리뷰<br/>시간대 혼잡</div>
+            <div class="mini-row"><span>오후</span><div class="tiny-bar"><div class="tiny-fill" style="width:72%"></div></div><span>혼잡</span></div>
+          </div>
+
+          <div class="kpi red">
+            <div class="kpi-top"><small>긴급 이슈</small><span class="delta warn">HIGH</span></div>
+            <strong>4</strong>
+            <div class="kpi-text">장애 1 · 보안 1<br/>승인대기 2</div>
+            <div class="spark"><i style="height:75%;background:var(--red)"></i><i style="height:48%;background:var(--orange)"></i><i style="height:62%;background:var(--red)"></i></div>
+          </div>
+        </section>
+
+        <!-- ── 메인 영역 ── -->
+        <section class="main-grid">
+          <!-- 업무 보드 -->
+          <article class="panel todo-panel">
+            <div class="panel-head">
+              <div>
+                <h2 id="taskPanelTitle">팀 업무 분장 · To-do</h2>
+                <div class="desc" id="taskPanelDesc">관리자: 업무 추가/수정/담당자 지정 가능</div>
+              </div>
+              <button class="mini-btn" id="addTodoBtn" onclick="openTaskModal()">+ 업무</button>
+            </div>
+            <div class="todo-list" id="todoList"></div>
+          </article>
+
+          <!-- 프로젝트 -->
+          <article class="panel project-panel">
+            <div class="panel-head">
+              <div>
+                <h2>프로젝트 운영 관제</h2>
+                <div class="desc">PM / 예산 / D-day / 진행률</div>
+              </div>
+              <button class="mini-btn" onclick="toast('프로젝트 데이터 동기화 완료')">Sync</button>
+            </div>
+            <div class="project-list" id="projectList"></div>
+          </article>
+
+          <!-- 운영 분석 -->
+          <article class="panel analysis-panel">
+            <div class="panel-head">
+              <div>
+                <h2>운영 분석 · Funnel / Calendar</h2>
+                <div class="desc">업무 흐름과 일정 혼잡도</div>
+              </div>
+            </div>
+            <div class="analysis-grid">
+              <div class="micro-card">
+                <h3>업무 처리 Funnel <span>병목: 검토</span></h3>
+                <div class="funnel-row"><span>생성</span><div class="funnel-bar"><i style="width:100%"></i></div><b id="funnelCreated">48</b></div>
+                <div class="funnel-row"><span>진행</span><div class="funnel-bar"><i id="funnelProgress" style="width:70%"></i></div><b id="funnelProgressNum">34</b></div>
+                <div class="funnel-row"><span>검토</span><div class="funnel-bar"><i style="width:38%;background:linear-gradient(90deg,var(--yellow),var(--red))"></i></div><b>18</b></div>
+                <div class="funnel-row"><span>완료</span><div class="funnel-bar"><i id="funnelDone" style="width:31%;background:linear-gradient(90deg,var(--green),var(--cyan))"></i></div><b id="funnelDoneNum">15</b></div>
+                <div class="insight-text">검토 단계 전환율 52.9% → QA 검토자 추가 배정 필요</div>
+              </div>
+
+              <div class="micro-card">
+                <h3>일정 밀도 <span>충돌 1건</span></h3>
+                <div class="calendar-density">
+                  <div class="density-chip low"><b>09</b><span>여유 34%</span></div>
+                  <div class="density-chip mid"><b>10</b><span>보통 62%</span></div>
+                  <div class="density-chip low"><b>11</b><span>여유 45%</span></div>
+                  <div class="density-chip high"><b>14</b><span>충돌 92%</span></div>
+                  <div class="density-chip mid"><b>16</b><span>혼잡 71%</span></div>
+                </div>
+                <div class="insight-text"><b>14:00 충돌</b> · PM 회의와 QA 리뷰가 겹쳐 QA 리뷰 분산 권장</div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 업무 SNS Hub -->
+          <article class="panel comm-panel">
+            <div class="panel-head">
+              <div>
+                <h2>업무 SNS Hub</h2>
+                <div class="desc">팀 채팅 · 공지 피드 · 바로 조치할 업무를 한 화면에 요약</div>
+              </div>
+              <button class="mini-btn" onclick="addFeed('관리자 공지','새 공지가 업무 피드에 등록되었습니다.',['#공지','#공유'])">+ 공지</button>
+            </div>
+            <div class="comm-split">
+              <div class="comm-box">
+                <div class="comm-box-title"><b>팀 채팅</b><div class="hub-tabs" id="chatTabs"><button class="hub-tab active" onclick="setChatView('today')">오늘</button><button class="hub-tab" onclick="setChatView('week')">이번주</button><button class="hub-tab" onclick="setChatView('all')">전체기록</button></div></div>
+                <div class="comm-scroll" id="chatList"></div>
+                <div class="chat-input">
+                  <input id="chatInput" placeholder="업무 메시지 입력" onkeydown="if(event.key==='Enter')sendChat()" />
+                  <button onclick="sendChat()">전송</button>
+                </div>
+              </div>
+              <div class="comm-box">
+                <div class="comm-box-title"><b>업무 피드</b><div class="hub-tabs" id="feedTabs"><button class="hub-tab active" onclick="setFeedView('today')">오늘</button><button class="hub-tab" onclick="setFeedView('week')">이번주</button><button class="hub-tab" onclick="setFeedView('all')">전체기록</button></div></div>
+                <div class="comm-scroll" id="feedList"></div>
+              </div>
+              <div class="comm-box hub-summary">
+                <div class="comm-box-title"><b>Hub 요약</b><span>오늘</span></div>
+                <div class="hub-metric-grid">
+                  <div class="hub-metric"><strong>3</strong><span>새 대화</span></div>
+                  <div class="hub-metric"><strong>2</strong><span>긴급 공지</span></div>
+                  <div class="hub-metric"><strong>1</strong><span>승인 요청</span></div>
+                  <div class="hub-metric"><strong>17:00</strong><span>결산 마감</span></div>
+                </div>
+                <div class="hub-action-list">
+                  <div class="hub-action"><b>즉시 확인</b> QA 기준표 업데이트 · 검토자 배정 필요</div>
+                  <div class="hub-action"><b>공유 예정</b> 보안 패치 재기동 시간 팀 공지</div>
+                  <div class="hub-action"><b>자동화</b> 일일 결산 작성 후 Gmail 발송 대기</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 배포 상태/반영 체크 -->
+          <article class="panel status-panel">
+            <div class="panel-head">
+              <div>
+                <h2>온라인 상태 · 반영 체크</h2>
+                <div class="desc">요구사항 반영 여부를 즉시 확인</div>
+              </div>
+              <button class="mini-btn" onclick="toast('모든 상태 점검 완료')">Check</button>
+            </div>
+            <div class="status-list">
+              <div class="deploy-grid">
+                <div class="deploy-card"><strong>GitHub</strong><span>Connected</span></div>
+                <div class="deploy-card"><strong>Railway</strong><span>Online Ready</span></div>
+                <div class="deploy-card"><strong>Google</strong><span>OAuth Ready</span></div>
+                <div class="deploy-card"><strong>Gmail</strong><span>API Ready</span></div>
+              </div>
+              <div class="check-list" id="checkList"></div>
+            </div>
+          </article>
+
+          <!-- AI 인사이트 -->
+          <article class="panel ai-panel">
+            <div class="panel-head">
+              <div>
+                <h2>AI Ops Assistant · 추천 조치</h2>
+                <div class="desc">관리자/사원 권한별 해석</div>
+              </div>
+              <button class="mini-btn" onclick="toast('AI 인사이트 갱신 완료')">Refresh</button>
+            </div>
+            <div class="ai-grid" id="aiGrid"></div>
+          </article>
+
+          <!-- 히트맵 -->
+          <article class="panel heatmap-panel">
+            <div class="panel-head">
+              <div>
+                <h2>팀원별 Workload Heatmap</h2>
+                <div class="desc" id="heatmapDesc">관리자는 팀원별 부하를 전체 확인</div>
+              </div>
+            </div>
+            <div class="heatmap-wrap" id="heatmap"></div>
+          </article>
+
+          <!-- 포스트잇 -->
+          <article class="panel notes-panel">
+            <div class="panel-head">
+              <div>
+                <h2>포스트잇 메모</h2>
+                <div class="desc">3개 메모 localStorage 저장</div>
+              </div>
+            </div>
+            <div class="notes-grid">
+              <textarea class="note" oninput="saveNotes()">17:00 결산 리포트 확인</textarea>
+              <textarea class="note" oninput="saveNotes()">보안 패치 완료 후 공지</textarea>
+              <textarea class="note" oninput="saveNotes()">QA 리뷰 일정 재조정</textarea>
+            </div>
+          </article>
+        </section>
+
+        <!-- ── 결산 분석 ── -->
+        <section class="analytics">
+          <div class="chart-card">
+            <h3>일일 결산 <span id="dailyScope">팀 기준</span></h3>
+            <div class="donut-wrap">
+              <div class="donut" id="dailyDonut"><b id="dailyPercent">72%</b></div>
+              <div class="legend-list">
+                <div><span>완료</span><b id="dailyDone">15</b></div>
+                <div><span>미완료</span><b id="dailyTodo">3</b></div>
+                <div><span>지연</span><b id="dailyLate">2</b></div>
+                <div><span>평균 처리</span><b>5.2h</b></div>
+              </div>
+            </div>
+            <div class="chart-foot"><b>해석:</b> 완료율과 SLA 위험을 함께 봐야 함</div>
+          </div>
+
+          <div class="chart-card">
+            <h3>주간 결산 <span>요일별 완료 추이</span></h3>
+            <div class="line-chart">
+              <svg viewBox="0 0 220 90" preserveAspectRatio="none">
+                <polyline fill="none" stroke="rgba(64,224,208,.95)" stroke-width="3" points="8,70 42,64 76,52 110,57 144,36 178,27 212,20"/>
+                <polyline fill="rgba(64,224,208,.13)" stroke="none" points="8,70 42,64 76,52 110,57 144,36 178,27 212,20 212,90 8,90"/>
+                <circle cx="8" cy="70" r="3" fill="#40e0d0"/><circle cx="42" cy="64" r="3" fill="#40e0d0"/><circle cx="76" cy="52" r="3" fill="#40e0d0"/><circle cx="110" cy="57" r="3" fill="#40e0d0"/><circle cx="144" cy="36" r="3" fill="#40e0d0"/><circle cx="178" cy="27" r="3" fill="#40e0d0"/><circle cx="212" cy="20" r="3" fill="#40e0d0"/>
+                <text x="8" y="86">월</text><text x="42" y="86">화</text><text x="76" y="86">수</text><text x="110" y="86">목</text><text x="144" y="86">금</text><text x="178" y="86">토</text><text x="208" y="86">일</text>
+              </svg>
+            </div>
+            <div class="chart-foot"><b>금요일 처리량 급증</b> · 주중 검토 병목 해소</div>
+          </div>
+
+          <div class="chart-card">
+            <h3>월간 결산 <span>유형별 상태</span></h3>
+            <div class="stack-list">
+              <div class="stack-row"><span>문서</span><div class="stackbar"><span class="seg done" style="width:62%"></span><span class="seg progress" style="width:28%"></span><span class="seg delay" style="width:10%"></span></div><b>90</b></div>
+              <div class="stack-row"><span>QA</span><div class="stackbar"><span class="seg done" style="width:48%"></span><span class="seg progress" style="width:32%"></span><span class="seg delay" style="width:20%"></span></div><b>52</b></div>
+              <div class="stack-row"><span>보안</span><div class="stackbar"><span class="seg done" style="width:45%"></span><span class="seg progress" style="width:25%"></span><span class="seg delay" style="width:30%"></span></div><b>31</b></div>
+              <div class="stack-row"><span>정산</span><div class="stackbar"><span class="seg done" style="width:70%"></span><span class="seg progress" style="width:20%"></span><span class="seg delay" style="width:10%"></span></div><b>44</b></div>
+            </div>
+            <div class="chart-foot"><b>보안 지연 30%</b> · workload와 연결</div>
+          </div>
+
+          <div class="chart-card">
+            <h3>분기 병목 TOP5 <span>지연/승인대기 건수</span></h3>
+            <div class="bottleneck-list">
+              <div class="bottleneck-row high"><span>QA 승인 지연</span><div class="bottleneck-bar"><i style="width:100%"></i></div><b>12건</b></div>
+              <div class="bottleneck-row high"><span>보안 패치 SLA 초과</span><div class="bottleneck-bar"><i style="width:72%"></i></div><b>8건</b></div>
+              <div class="bottleneck-row mid"><span>ERP 검토 병목</span><div class="bottleneck-bar"><i style="width:55%"></i></div><b>6건</b></div>
+              <div class="bottleneck-row mid"><span>회의 일정 충돌</span><div class="bottleneck-bar"><i style="width:45%"></i></div><b>5건</b></div>
+              <div class="bottleneck-row low"><span>외주 승인 대기</span><div class="bottleneck-bar"><i style="width:36%"></i></div><b>4건</b></div>
+            </div>
+            <div class="chart-foot"><b>우선 조치:</b> QA 검토자 추가 배정 → 보안 SLA 재조정</div>
+          </div>
+
+          <div class="chart-card">
+            <h3>연간 결산 <span>기여도 + 과부하</span></h3>
+            <div class="rank-list">
+              <div class="rank-row"><span>김민지</span><div class="rank-bar"><i style="width:92%"></i></div><b>21</b></div>
+              <div class="rank-row"><span>이준호</span><div class="rank-bar"><i style="width:86%"></i></div><b>19</b></div>
+              <div class="rank-row"><span>한서윤</span><div class="rank-bar"><i style="width:73%"></i></div><b>16</b></div>
+              <div class="rank-row"><span>박서연</span><div class="rank-bar"><i style="width:64%"></i></div><b>14</b></div>
+              <div class="rank-row"><span>오세훈</span><div class="rank-bar"><i style="width:58%"></i></div><b>12</b></div>
+            </div>
+            <div class="chart-foot">성과 높음 ≠ 적정 배분 · 상위 2명 과부하 주의</div>
+          </div>
+        </section>
+
+        <!-- 푸터 -->
+        <footer>
+          <div>Integrated Cloud Services Active · Secure Auth · Mail Automation · Activity Archive Live</div>
+          <div class="footer-actions">
+            <button class="pill green" onclick="sendReport()">일일 결산 Gmail 발송</button>
+            <button class="pill" onclick="toast('모든 기능 온라인 활성화 상태를 확인했습니다.')">기능 활성화 확인</button>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- ── 업무 추가 모달 ── -->
+  <div class="modal" id="taskModal">
+    <div class="modal-box">
+      <h2>관리자 업무 추가</h2>
+      <p>담당자, 우선순위, 진행률을 지정하면 KPI와 업무 보드가 자동 갱신됩니다.</p>
+      <div class="modal-grid">
+        <div class="modal-field full">
+          <label>업무명</label>
+          <input id="newTaskTitle" value="신규 업무를 입력하세요" />
+        </div>
+        <div class="modal-field">
+          <label>담당자</label>
+          <select id="newTaskOwner">
+            <option>김민지</option>
+            <option>이준호</option>
+            <option>한서윤</option>
+            <option>박서연</option>
+            <option>오세훈</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label>우선순위</label>
+          <select id="newTaskPriority">
+            <option value="HIGH">HIGH</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="LOW">LOW</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label>프로젝트</label>
+          <select id="newTaskProject">
+            <option>보안 취약점 대응</option>
+            <option>ERP 전사 고도화</option>
+            <option>AI 문서 자동화</option>
+            <option>신규 모바일 앱 런칭</option>
+            <option>정산 프로세스 개선</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label>진행률</label>
+          <select id="newTaskProgress">
+            <option value="0">0%</option>
+            <option value="25">25%</option>
+            <option value="50">50%</option>
+            <option value="75">75%</option>
+            <option value="100">100%</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="primary-btn" onclick="createTaskFromModal()">업무 추가</button>
+        <button class="secondary-btn" onclick="closeTaskModal()">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ───────────────── 데이터 ─────────────────
+    let currentRole = "admin";
+    let selectedRole = "admin";
+
+    const projects = [
+      ["업무 자동화 대시보드","PM 김민지 · 예산 0.5억 · D-26",72],
+      ["ERP 전사 고도화","PM 오세훈 · 예산 4.2억 · D-133",39],
+      ["AI 문서 자동화","PM 한서윤 · 예산 2.6억 · D-86",58],
+      ["보안 취약점 대응","PM 이준호 · 예산 0.9억 · D-8",81]
+    ];
+
+    const defaultTasks = [
+      {title:"긴급 보안 패치 적용 및 시스템 재기동", owner:"이준호", project:"보안 취약점 대응", level:"HIGH", progress:15, done:false},
+      {title:"QA 테스트 결과 검토 및 오류 분류 기준 확정", owner:"김민지", project:"ERP 전사 고도화", level:"HIGH", progress:45, done:false},
+      {title:"주간 업무 요약 리포트 자동화 테스트", owner:"한서윤", project:"AI 문서 자동화", level:"MEDIUM", progress:100, done:true},
+      {title:"외주 용역 산출물 검수 및 대금 지급", owner:"박서연", project:"정산 프로세스 개선", level:"MEDIUM", progress:55, done:false},
+      {title:"신규 모바일 앱 런칭 사전 점검", owner:"오세훈", project:"신규 모바일 앱 런칭", level:"LOW", progress:35, done:false}
+    ];
+
+    let tasks = JSON.parse(localStorage.getItem("finalDashTasks") || "null") || defaultTasks;
+
+    let chatView = "today";
+    let feedView = "today";
+
+    function buildChatLogs(){
+      const today = [
+        {type:"date", label:"2026.05.27 수요일"},
+        {from:"김민지", time:"09:12", text:"QA 기준표 최종본 올라왔어요. 배포 전 체크리스트만 확인 부탁드립니다.", team:"QA"},
+        {from:"이준호", time:"09:14", text:"VPN 인증 서버 에러율 올라가고 있습니다. 인프라팀 확인 중입니다.", team:"보안"},
+        {from:"박서연", time:"09:26", text:"외주 정산 승인 2건 아직 남아있어요. 담당자 확인 가능할까요?", team:"재무"},
+        {from:"나", time:"09:31", text:"QA 승인 끝나면 바로 결산 리포트 자동 발송 테스트 돌릴게요.", team:"PM", me:true, read:"읽음 3"},
+        {from:"오세훈", time:"10:03", text:"14시 PM 회의 자료 업로드 완료했습니다.", team:"PM"}
+      ];
+      const names=[['김민지','QA'],['이준호','보안'],['한서윤','AI'],['박서연','재무'],['오세훈','PM']];
+      const texts=["승인 대기 건 확인 부탁드립니다.","로그 모니터링 중입니다.","자동화 테스트 결과 공유드립니다.","정산 승인 상태 업데이트했습니다.","회의 자료 올렸습니다.","일정 변경 확인 부탁드립니다."];
+      const week=[];
+      const all=[];
+      let day=1;
+      for(let i=0;i<50;i++){
+        if(i%7===0){ week.push({type:'date',label:`2026.05.${20+day} 기록`}); day++; }
+        const n=names[i%names.length];
+        week.push({from:n[0], time:`${String(9+(i%9)).padStart(2,'0')}:${String((i*7)%60).padStart(2,'0')}`, text:texts[i%texts.length], team:n[1], me:n[0]==='나'});
+      }
+      day=1;
+      for(let i=0;i<200;i++){
+        if(i%10===0){ all.push({type:'date',label:`2026.05.${String((i/10)+1).padStart(2,'0')} 아카이브`}); }
+        const n=names[i%names.length];
+        all.push({from:n[0], time:`${String(8+(i%10)).padStart(2,'0')}:${String((i*11)%60).padStart(2,'0')}`, text:`${texts[i%texts.length]} (#${i+1})`, team:n[1], me:false});
+      }
+      return {today, week, all};
+    }
+
+    function buildFeedLogs(){
+      const today=[
+        {type:"관리자 공지", time:"09:00", text:"오늘 17:00까지 일일 결산 리포트 제출 바랍니다. 미제출 팀 자동 알림 발송.", tags:["#결산","#공지"]},
+        {type:"QA 공유", time:"10:18", text:"테스트 케이스 v2.3 기준표 업로드 완료. 신규 배포 전 확인 필수", tags:["#QA","#배포"]},
+        {type:"보안팀 공지", time:"10:22", text:"VPN 인증 서버 간헐 장애 감지. 접속 불안정 가능", tags:["#긴급","#보안"]},
+        {type:"PM 업데이트", time:"11:05", text:"ERP 고도화 프로젝트 QA 검토 회의 16:30으로 조정", tags:["#PM","#일정"]},
+        {type:"재무팀 공지", time:"11:42", text:"외주 정산 승인 마감 D-1", tags:["#재무","#승인"]},
+        {type:"인사팀 공지", time:"13:20", text:"재택근무 신청 마감 14:00", tags:["#인사","#재택"]}
+      ];
+      const types=['관리자 공지','QA 공유','보안팀 공지','PM 업데이트','재무팀 공지','인사팀 공지'];
+      const msgs=['업무 기준 업데이트','검토 병목 발생','시스템 점검 예정','일정 변경 안내','승인 마감 안내','근무 정책 안내'];
+      const week=[]; const all=[];
+      for(let i=0;i<50;i++) week.push({type:types[i%types.length], time:`05.${25+(i%7)} ${String(9+(i%8)).padStart(2,'0')}:00`, text:`${msgs[i%msgs.length]} (#${i+1})`, tags:['#업무','#기록']});
+      for(let i=0;i<200;i++) all.push({type:types[i%types.length], time:`04.${String(1+(i%30)).padStart(2,'0')} ${String(8+(i%10)).padStart(2,'0')}:30`, text:`아카이브 공지 내역 ${i+1}`, tags:['#archive','#history']});
+      return {today, week, all};
+    }
+
+    const chatLogs = buildChatLogs();
+    const feedLogs = buildFeedLogs();
+
+    const chats = chatLogs.today;
+    const feeds = feedLogs.today.map(f => ({from:`${f.type} · ${f.time}`, text:f.text, tags:f.tags}));
+
+    const staffCompanyTasks = [
+      {title:"VIP 고객 결제 오류 문의 1차 답변", meta:"Instagram · 13:30 마감 · 진행률 60%", level:"HIGH", done:false},
+      {title:"배송 지연 불만 고객 escalation 정리", meta:"Kakao · 14:20 마감 · 진행률 35%", level:"HIGH", done:false},
+      {title:"SNS DM 신규 문의 7건 빠른 응대", meta:"Instagram · 오늘 처리 · 진행률 40%", level:"MEDIUM", done:false},
+      {title:"일일 고객 응대 리포트 작성", meta:"Gmail 자동 발송 전 검토 · 17:00", level:"REPORT", done:false}
+    ];
+
+    let personalTodos = JSON.parse(localStorage.getItem("staffPersonalTodos") || "null") || [
+      {text:"교수님 메일 보내기", done:false},
+      {text:"발표 자료 수정", done:false},
+      {text:"장학금 서류 확인", done:false}
+    ];
+
+    const adminAnalysisHTML = document.querySelector(".analysis-grid").innerHTML;
+    const adminAnalyticsHTML = document.querySelector(".analytics").innerHTML;
+
+    
+    const checklist = [
+      ["로그인 화면 실제 서비스화","로그인 페이지"],
+      ["관리자/사원 권한 구분","role 기반 화면"],
+      ["Google 로그인 통합 옵션","로그인 버튼"],
+      ["업무 추가 모달","관리자 전용"],
+      ["담당자/우선순위/진행률 선택","모달 필드"],
+      ["KPI 자동 갱신","업무 완료/추가 시"],
+      ["채팅 + 업무 피드 분리","커뮤니케이션 패널"],
+      ["포스트잇 3개","우측 하단"],
+      ["결산 분석 카드 개선","하단 분석"],
+      ["Railway/GitHub/Google/Gmail 상태","상태 패널"]
+    ];
+
+    // ───────────────── 로그인 ─────────────────
+    function selectRole(role){
+      selectedRole = role;
+      document.getElementById("roleAdmin").classList.toggle("active", role === "admin");
+      document.getElementById("roleStaff").classList.toggle("active", role === "staff");
+      document.getElementById("loginId").value = role === "admin" ? "admin" : "staff";
+      document.getElementById("loginPw").value = "1234";
+    }
+
+    function fillDemo(){
+      selectRole(selectedRole);
+      toast("데모 계정이 입력되었습니다.");
+    }
+
+    function loginWithAccount(){
+      const id = document.getElementById("loginId").value.trim();
+      const pw = document.getElementById("loginPw").value.trim();
+      if((selectedRole === "admin" && id === "admin" && pw === "1234") ||
+         (selectedRole === "staff" && id === "staff" && pw === "1234")){
+        enterDashboard(selectedRole);
+      }else{
+        toast("계정 정보를 확인하세요. admin/1234 또는 staff/1234");
+      }
+    }
+
+    function googleLogin(){
+      enterDashboard(selectedRole);
+      toast("Google OAuth 데모 로그인 완료 · 선택한 권한으로 진입");
+    }
+
+    function enterDashboard(role){
+      currentRole = role;
+      document.getElementById("loginPage").style.display = "none";
+      document.getElementById("dashboard").classList.add("show");
+      applyRole();
+      renderAll();
+      toast(role === "admin" ? "관리자 대시보드로 접속했습니다." : "사원 대시보드로 접속했습니다.");
+    }
+
+    function logout(){
+      document.getElementById("dashboard").classList.remove("show");
+      document.getElementById("loginPage").style.display = "grid";
+      toast("로그아웃되었습니다.");
+    }
+
+    // ───────────────── 권한별 화면 ─────────────────
+    function applyRole(){
+      const isAdmin = currentRole === "admin";
+      const dashboard = document.getElementById("dashboard");
+      dashboard.classList.toggle("staff-mode", !isAdmin);
+      dashboard.classList.toggle("admin-mode", isAdmin);
+
+      document.getElementById("roleBadge").textContent = isAdmin ? "관리자" : "사원";
+      document.querySelector(".title h1").textContent = isAdmin ? "Workflow OS · Operations Command Center" : "Customer Success Workspace";
+      document.getElementById("roleText").textContent = isAdmin
+        ? "관리자 모드 · 업무 배정 / 팀 관제 / 결산 분석"
+        : "사원 모드 · 고객 문의 응대 / SNS 인박스 / 개인 To-do / 응답 SLA";
+      document.getElementById("taskPanelTitle").textContent = isAdmin ? "팀 업무 분장 · To-do" : "오늘 내 업무 체크리스트";
+      document.getElementById("taskPanelDesc").textContent = isAdmin
+        ? "관리자: 업무 추가/수정/담당자 지정 가능"
+        : "사원: 내 담당 업무 + 고객 문의 응대 현황 빠르게 확인";
+      document.getElementById("addTodoBtn").style.display = isAdmin ? "inline-block" : "none";
+      document.getElementById("heatmapDesc").textContent = isAdmin ? "일간 기준 · 행=팀원 / 열=시간대 / 숫자=부하율" : "신규 문의 → 처리 중 → SLA 임박 → 해결 완료";
+      document.getElementById("dailyScope").textContent = isAdmin ? "팀 기준" : "개인 기준";
+
+      const projectTitle = document.querySelector(".project-panel h2");
+      const projectDesc = document.querySelector(".project-panel .desc");
+      const projectBtn = document.querySelector(".project-panel .mini-btn");
+      projectTitle.textContent = isAdmin ? "프로젝트 운영 관제" : "나의 오늘 근무 보드";
+      projectDesc.textContent = isAdmin ? "PM / 예산 / D-day / 진행률" : "출근 상태 · 오늘 루틴 · 개인 마감";
+      projectBtn.textContent = isAdmin ? "Sync" : "상태 저장";
+
+      const analysisTitle = document.querySelector(".analysis-panel h2");
+      const analysisDesc = document.querySelector(".analysis-panel .desc");
+      analysisTitle.textContent = isAdmin ? "운영 분석 · Funnel / Calendar" : "개인 생산성 · 집중 시간";
+      analysisDesc.textContent = isAdmin ? "업무 흐름과 일정 혼잡도" : "내 업무 처리 흐름과 오늘 일정 혼잡도";
+
+      const commDesc = document.querySelector(".comm-panel .desc");
+      commDesc.textContent = isAdmin ? "실시간 팀 커뮤니케이션 · 공지 아카이브" : "내 멘션 · 고객 escalation · 응대 알림 중심으로 요약";
+    }
+
+    // ───────────────── 렌더링 ─────────────────
+    function renderAll(){
+      renderTasks();
+      renderProjects();
+      renderAnalysis();
+      renderComm();
+      renderStatus();
+      renderAI();
+      renderHeatmap();
+      renderAnalytics();
+      loadNotes();
+      updateKpis();
+    }
+
+    function visibleTasks(){
+      if(currentRole === "admin") return tasks;
+      return tasks.filter(t => t.owner === "한서윤" || t.done);
+    }
+
+    function renderTasks(){
+      const list = document.getElementById("todoList");
+
+      if(currentRole !== "admin"){
+        const companyHtml = staffCompanyTasks.map((t,i)=>{
+          const chipClass = t.level === "HIGH" ? "" : t.level === "MEDIUM" ? "mid" : "low";
+          return `
+            <div class="staff-work-item">
+              <input type="checkbox" ${t.done ? "checked" : ""} onchange="toggleStaffCompanyTask(${i})">
+              <div>
+                <div class="staff-work-title">${t.title}</div>
+                <div class="staff-work-meta">${t.meta}</div>
+              </div>
+              <span class="chip ${chipClass}">${t.level}</span>
+            </div>`;
+        }).join("");
+
+        const personalHtml = personalTodos.map((t,i)=>`
+          <div class="personal-item ${t.done ? "done" : ""}">
+            <input type="checkbox" ${t.done ? "checked" : ""} onchange="togglePersonalTodo(${i})">
+            <span>${t.text}</span>
+            <button onclick="deletePersonalTodo(${i})">×</button>
+          </div>`).join("");
+
+        list.innerHTML = `
+          <div class="staff-company-box">
+            <div class="staff-section-title">회사 업무 체크리스트 <span>고객 응대 / 마감 / 진행률</span></div>
+            <div class="staff-work-scroll">${companyHtml}</div>
+          </div>
+          <div class="personal-todo-box">
+            <div class="staff-section-title">개인 To-do <span>업무 체크리스트와 분리 저장</span></div>
+            <div class="personal-add-row">
+              <input id="personalTodoInput" placeholder="개인 To-do 입력" onkeydown="if(event.key==='Enter')addPersonalTodo()">
+              <button onclick="addPersonalTodo()">+</button>
+            </div>
+            <div class="personal-list">${personalHtml}</div>
+          </div>`;
+        return;
+      }
+
+      const data = visibleTasks();
+      list.innerHTML = data.map((t)=>{
+        const i = tasks.indexOf(t);
+        const chipClass = t.level === "HIGH" ? "" : t.level === "MEDIUM" ? "mid" : "low";
+        return `
+          <div class="todo">
+            <input type="checkbox" ${t.done ? "checked" : ""} onchange="toggleTask(${i})">
+            <div>
+              <input class="todo-title" value="${t.title}" onchange="editTask(${i}, this.value)">
+              <div class="todo-meta">${t.owner} · ${t.project} · 진행률 ${t.progress}%</div>
+            </div>
+            <span class="chip ${chipClass}">${t.level}</span>
+          </div>`;
+      }).join("");
+      localStorage.setItem("finalDashTasks", JSON.stringify(tasks));
+    }
+
+    function renderProjects(){
+      const isAdmin = currentRole === "admin";
+      const list = document.getElementById("projectList");
+      if(isAdmin){
+        list.innerHTML = projects.map(p => `
+          <div class="project">
+            <div class="project-top"><h3>${p[0]}</h3><span class="chip ${p[2] > 75 ? '' : 'mid'}">${p[2]}%</span></div>
+            <p>${p[1]}</p>
+            <div class="bar"><div class="fill" style="width:${p[2]}%"></div></div>
+          </div>
+        `).join("");
+        return;
+      }
+
+      list.innerHTML = `
+        <div class="staff-today-card">
+          <div class="staff-profile-line">
+            <div><b>한서윤 · 고객 커뮤니케이션 / AI 문서 자동화팀</b><span>오늘 근무: 하이브리드 · 고객 문의 응대 + 내부 QA 지원</span></div>
+            <span class="chip info">SNS Desk</span>
+          </div>
+          <div class="staff-focus-list">
+            <div class="staff-focus"><strong>12</strong><span>신규 문의 대기</span></div>
+            <div class="staff-focus"><strong>3</strong><span>우선 응대 대상</span></div>
+            <div class="staff-focus"><strong>89%</strong><span>응답 SLA 준수</span></div>
+            <div class="staff-focus"><strong>17:00</strong><span>일일 운영 리포트 마감</span></div>
+          </div>
+          <div class="staff-routine">
+            <div class="routine-item"><b>10:00</b><div>VIP 고객 문의 응대<span>결제 오류 / 1시간 내 응답</span></div><span class="chip">HIGH</span></div>
+            <div class="routine-item"><b>13:30</b><div>인스타그램 DM 문의 정리<span>신규 문의 7건</span></div><span class="chip purple">SNS</span></div>
+            <div class="routine-item"><b>16:30</b><div>일일 응대 리포트 작성<span>Google Mail 자동 발송 전 검토</span></div><span class="chip low">REPORT</span></div>
+          </div>
+          <div class="staff-focus-check-grid">
+            <div class="staff-timer-card">
+              <div class="staff-mini-label">Focus Timer</div>
+              <div class="staff-timer-time">25:00</div>
+              <div class="staff-mini-desc">VIP 환불 문의 집중 처리 세션</div>
+            </div>
+            <div class="staff-close-card">
+              <div class="staff-mini-label warn">퇴근 전 체크리스트</div>
+              <div class="staff-close-list">☐ 미응답 DM 0건 확인<br>☐ 일일 응대 리포트 제출<br>☐ 긴급 문의 인수인계 완료</div>
+            </div>
+          </div>
+          <div class="staff-privacy-note">실제 고객 커뮤니케이션 담당자의 실행형 워크스페이스처럼 개인 업무 처리와 고객 응대 흐름 중심으로 구성됩니다.</div>
+        </div>`;
+    }
+
+    function setActiveTabs(groupId, value){
+      const tabs = document.querySelectorAll(`#${groupId} .hub-tab`);
+      tabs.forEach(btn => btn.classList.remove("active"));
+      const map = {today:0, week:1, all:2};
+      if(tabs[map[value]]) tabs[map[value]].classList.add("active");
+    }
+
+    function setChatView(view){
+      chatView = view;
+      setActiveTabs("chatTabs", view);
+      renderComm();
+    }
+
+    function setFeedView(view){
+      feedView = view;
+      setActiveTabs("feedTabs", view);
+      renderComm();
+    }
+
+    
+
+    function renderAnalysis(){
+      const isAdmin = currentRole === "admin";
+      const grid = document.querySelector(".analysis-grid");
+      if(isAdmin){
+        grid.innerHTML = adminAnalysisHTML;
+        return;
+      }
+      grid.innerHTML = `
+        <div class="micro-card" style="grid-row:1 / -1;">
+          <h3>SNS Inbox <span>고객명 · 채널 · 상태</span></h3>
+          <div class="sns-inbox">
+            <div class="sns-row"><b>김OO</b><span>Instagram</span><div>결제 오류 문의</div><span class="status-normal">답변 대기</span></div>
+            <div class="sns-row"><b>박OO</b><span>Email</span><div>기업 고객 환불 요청</div><span class="status-vip">VIP</span></div>
+            <div class="sns-row"><b>이OO</b><span>Kakao</span><div>배송 지연 불만</div><span class="status-warn">불만</span></div>
+            <div class="sns-row"><b>최OO</b><span>X</span><div>공개 댓글 이슈</div><span class="status-warn">Escalation</span></div>
+            <div class="sns-row"><b>정OO</b><span>WebChat</span><div>로그인 오류 해결</div><span class="status-done">완료</span></div>
+            <div class="sns-row"><b>윤OO</b><span>Instagram</span><div>이벤트 참여 문의</div><span class="status-normal">일반</span></div>
+          </div>
+        </div>`;
+    }
+
+    function renderAnalytics(){
+      const isAdmin = currentRole === "admin";
+      const area = document.querySelector(".analytics");
+      if(isAdmin){
+        area.innerHTML = adminAnalyticsHTML;
+        return;
+      }
+      area.innerHTML = `
+        <div class="chart-card">
+          <h3>오늘 응대한 문의 수 <span>개인 기준</span></h3>
+          <div class="donut-wrap">
+            <div class="donut" style="--donut:89%"><b>18</b></div>
+            <div class="legend-list">
+              <div><span>해결 완료</span><b>18</b></div>
+              <div><span>처리 중</span><b>7</b></div>
+              <div><span>SLA 임박</span><b>2</b></div>
+              <div><span>VIP</span><b>1</b></div>
+            </div>
+          </div>
+          <div class="chart-foot"><b>해석:</b> 신규 문의보다 해결 속도가 빠른 상태</div>
+        </div>
+        <div class="chart-card">
+          <h3>평균 응답시간 <span>목표 15분</span></h3>
+          <div class="line-chart">
+            <svg viewBox="0 0 220 90" preserveAspectRatio="none">
+              <polyline fill="none" stroke="rgba(64,224,208,.95)" stroke-width="3" points="8,62 42,58 76,47 110,52 144,36 178,28 212,24"/>
+              <polyline fill="rgba(64,224,208,.13)" stroke="none" points="8,62 42,58 76,47 110,52 144,36 178,28 212,24 212,90 8,90"/>
+              <text x="8" y="86">09</text><text x="42" y="86">10</text><text x="76" y="86">11</text><text x="110" y="86">13</text><text x="144" y="86">15</text><text x="178" y="86">16</text><text x="208" y="86">17</text>
+            </svg>
+          </div>
+          <div class="chart-foot"><b>12분</b> · 목표보다 3분 빠름</div>
+        </div>
+        <div class="chart-card">
+          <h3>고객 만족도 <span>CSAT</span></h3>
+          <div class="donut-wrap">
+            <div class="donut" style="--donut:94%"><b>94%</b></div>
+            <div class="legend-list">
+              <div><span>만족</span><b>31</b></div>
+              <div><span>보통</span><b>3</b></div>
+              <div><span>불만</span><b>2</b></div>
+              <div><span>리뷰 필요</span><b>1</b></div>
+            </div>
+          </div>
+          <div class="chart-foot">불만 2건은 배송 지연/환불 이슈</div>
+        </div>
+        <div class="chart-card">
+          <h3>해결률 <span>문의 처리 상태</span></h3>
+          <div class="stack-list">
+            <div class="stack-row"><span>DM</span><div class="stackbar"><span class="seg done" style="width:78%"></span><span class="seg progress" style="width:16%"></span><span class="seg delay" style="width:6%"></span></div><b>23</b></div>
+            <div class="stack-row"><span>Email</span><div class="stackbar"><span class="seg done" style="width:64%"></span><span class="seg progress" style="width:24%"></span><span class="seg delay" style="width:12%"></span></div><b>11</b></div>
+            <div class="stack-row"><span>Kakao</span><div class="stackbar"><span class="seg done" style="width:58%"></span><span class="seg progress" style="width:20%"></span><span class="seg delay" style="width:22%"></span></div><b>9</b></div>
+            <div class="stack-row"><span>Web</span><div class="stackbar"><span class="seg done" style="width:86%"></span><span class="seg progress" style="width:10%"></span><span class="seg delay" style="width:4%"></span></div><b>14</b></div>
+          </div>
+          <div class="chart-foot"><b>해결률 89%</b> · Kakao 불만 응대 개선 필요</div>
+        </div>
+        <div class="chart-card">
+          <h3>FAQ TOP Keywords <span>오늘</span></h3>
+          <div class="keyword-cloud">
+            <span>환불</span><span>배송</span><span>로그인</span><span>결제오류</span><span>이벤트</span><span>쿠폰</span><span>세금계산서</span><span>비밀번호</span>
+          </div>
+          <div class="chart-foot">상위 키워드는 FAQ 자동응답 문구 개선에 사용</div>
+        </div>`;
+    }
+
+    function toggleStaffCompanyTask(i){
+      staffCompanyTasks[i].done = !staffCompanyTasks[i].done;
+      renderTasks();
+      updateKpis();
+      toast("회사 업무 체크 상태가 갱신되었습니다.");
+    }
+
+    function togglePersonalTodo(i){
+      personalTodos[i].done = !personalTodos[i].done;
+      localStorage.setItem("staffPersonalTodos", JSON.stringify(personalTodos));
+      renderTasks();
+    }
+
+    function addPersonalTodo(){
+      const input = document.getElementById("personalTodoInput");
+      if(!input || !input.value.trim()) return;
+      personalTodos.unshift({text:input.value.trim(), done:false});
+      localStorage.setItem("staffPersonalTodos", JSON.stringify(personalTodos));
+      input.value = "";
+      renderTasks();
+      toast("개인 To-do가 추가되었습니다.");
+    }
+
+    function deletePersonalTodo(i){
+      personalTodos.splice(i,1);
+      localStorage.setItem("staffPersonalTodos", JSON.stringify(personalTodos));
+      renderTasks();
+      toast("개인 To-do가 삭제되었습니다.");
+    }
+
+function renderComm(){
+      const chatData = chatLogs[chatView] || chatLogs.today;
+      document.getElementById("chatList").innerHTML = chatData.map((m)=>{
+        if(m.type === "date") return `<div class="date-divider">${m.label}</div>`;
+        return `
+          <div class="chat-msg ${m.me ? 'me' : ''}">
+            <b>${m.from}</b>
+            <span>${m.text}<em class="msg-meta">${m.time} ${m.read ? '· ' + m.read : ''} · ${m.team || '전체'}</em></span>
+          </div>`;
+      }).join("");
+
+      const feedData = feedLogs[feedView] || feedLogs.today;
+      document.getElementById("feedList").innerHTML = feedData.map(f=>`
+        <div class="feed-item"><b>${f.type}<span class="feed-time">${f.time}</span></b><span>${f.text}</span>
+          <div class="feed-tags">${f.tags.slice(0,2).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderStatus(){
+      document.getElementById("checkList").innerHTML = checklist.map(c=>`
+        <div class="check-item">
+          <div class="check-mark">✓</div>
+          <div>${c[0]}<div class="where">${c[1]}</div></div>
+          <span class="chip low">반영</span>
+        </div>
+      `).join("");
+    }
+
+    function renderAI(){
+      const isAdmin = currentRole === "admin";
+      const cards = isAdmin ? [
+        ["QA 병목 예측","검토 단계 대기 업무가 증가했습니다. QA 승인 인력을 1명 추가하는 것이 좋습니다.","추천: 한서윤 → QA 보조 배정"],
+        ["보안 업무 과부하","이준호 업무부하가 92%로 높습니다. 문서화 업무를 분산하세요.","추천: 문서화 → 박서연 이관"],
+        ["자동화 효과","일일 결산 자동작성과 Gmail 발송으로 4.2시간 절감 예상.","추천: 17:00 자동 발송 예약"]
+      ] : [
+        ["AI 답변 초안","VIP 결제 오류 고객에게 표준 응답 템플릿 기반 1차 안내 메시지를 즉시 생성합니다.","권장: 1분 내 1차 응답 발송"],
+        ["고객 감정 분석","배송 지연 문의 고객의 감정 온도가 높습니다. 공개 채널 확산 전 선제 응대가 필요합니다.","감정 상태: 불만 / 긴급도 HIGH"],
+        ["업무 우선순위 추천","SLA 40분 남은 VIP 문의와 공개 댓글 이슈를 일반 DM보다 먼저 처리해야 합니다.","우선 처리: VIP → 공개 이슈 → 일반 문의"],
+        ["관리자 Escalation","환불 승인 권한이 필요한 기업 고객 요청은 관리자 승인 프로세스로 전환하는 것이 안전합니다.","승인 요청: 김민지 PM"]
+      ];
+
+      document.getElementById("aiGrid").innerHTML = cards.map(c=>`
+        <div class="ai-card"><strong>${c[0]}</strong><p>${c[1]}</p><div class="action">${c[2]}</div></div>
+      `).join("");
+    }
+
+    function renderHeatmap(){
+      const panelTitle = document.querySelector(".heatmap-panel h2");
+      const wrap = document.getElementById("heatmap");
+      if(currentRole !== "admin"){
+        panelTitle.textContent = "Customer Response Queue";
+        wrap.className = "customer-queue";
+        wrap.innerHTML = `
+          <div class="queue-col">
+            <div class="queue-title">신규 문의 <span>12건</span></div>
+            <div class="queue-card"><b>Instagram</b>이벤트 참여 방법 문의<div class="q-meta"><span>김OO</span><span>10분 전</span></div></div>
+            <div class="queue-card"><b>Web Chat</b>로그인 인증번호 미수신<div class="q-meta"><span>윤OO</span><span>18분 전</span></div></div>
+            <div class="queue-card"><b>Kakao</b>주문 상태 확인 요청<div class="q-meta"><span>장OO</span><span>21분 전</span></div></div>
+          </div>
+          <div class="queue-col">
+            <div class="queue-title">처리 중 <span>7건</span></div>
+            <div class="queue-card vip"><b>Email · VIP</b>기업 고객 환불 서류 확인<div class="q-meta"><span>박OO</span><span>담당: 나</span></div></div>
+            <div class="queue-card"><b>Instagram DM</b>결제 오류 스크린샷 수집<div class="q-meta"><span>김OO</span><span>진행 60%</span></div></div>
+          </div>
+          <div class="queue-col">
+            <div class="queue-title">SLA 임박 <span>2건</span></div>
+            <div class="queue-card urgent"><b>Kakao · 불만</b>배송 지연 항의 / 보상 문의<div class="q-meta"><span>이OO</span><span>40분 남음</span></div></div>
+            <div class="queue-card urgent"><b>X 공개댓글</b>서비스 장애 불만 확산 가능<div class="q-meta"><span>최OO</span><span>25분 남음</span></div></div>
+          </div>
+          <div class="queue-col">
+            <div class="queue-title">해결 완료 <span>18건</span></div>
+            <div class="queue-card done"><b>Web Chat</b>로그인 오류 해결 안내 완료<div class="q-meta"><span>정OO</span><span>CSAT 5점</span></div></div>
+            <div class="queue-card done"><b>Email</b>세금계산서 재발행 안내<div class="q-meta"><span>문OO</span><span>완료</span></div></div>
+          </div>`;
+        return;
+      }
+
+      panelTitle.textContent = "팀원별 Workload Heatmap";
+      wrap.className = "heatmap-wrap";
+      const adminMap = [
+        ["김민지",[62,78,55,88,74,31]],
+        ["이준호",[75,88,96,92,86,52]],
+        ["한서윤",[38,56,70,72,61,29]],
+        ["박서연",[34,50,61,69,58,22]]
+      ];
+      const times = ["09시","11시","13시","15시","17시","19시"];
+      let html = `<div class="hm-head">일간</div>${times.map(t=>`<div class="hm-head">${t}</div>`).join("")}`;
+      adminMap.forEach(row=>{
+        html += `<div class="hm-label">${row[0]}</div>`;
+        row[1].forEach(v=>{
+          const cls = v >= 90 ? "hm5" : v >= 80 ? "hm4" : v >= 65 ? "hm3" : v >= 45 ? "hm2" : "hm1";
+          html += `<div class="hm-cell ${cls}">${v}</div>`;
+        });
+      });
+      wrap.innerHTML = html;
+    }
+
+    // ───────────────── KPI 자동 갱신 ─────────────────
+    function updateKpis(){
+      const isAdmin = currentRole === "admin";
+      const data = visibleTasks();
+      const total = isAdmin ? data.length : staffCompanyTasks.length;
+      const done = isAdmin ? data.filter(t=>t.done).length : staffCompanyTasks.filter(t=>t.done).length;
+      const late = isAdmin ? data.filter(t=>!t.done && t.level === "HIGH").length : 2;
+      const progress = Math.max(0,total - done);
+      const rate = total ? Math.round(done / total * 100) : 0;
+      const baseTotal = isAdmin ? total + 13 : 12;
+
+      const smalls = document.querySelectorAll(".kpi small");
+      if(isAdmin){
+        smalls[0].textContent = "오늘 업무 상태";
+        smalls[1].textContent = "완료율";
+        smalls[2].textContent = "SLA 위험";
+        smalls[3].textContent = "병목 지점";
+      }else{
+        smalls[0].textContent = "신규 문의";
+        smalls[1].textContent = "오늘 해결";
+        smalls[2].textContent = "SLA 임박";
+        smalls[3].textContent = "고객 감정";
+      }
+
+      document.getElementById("kpiTotal").textContent = baseTotal;
+      document.getElementById("kpiDoneRate").textContent = isAdmin ? rate + "%" : "18";
+      document.getElementById("kpiSla").textContent = isAdmin ? late : "2";
+      document.querySelectorAll(".kpi strong")[3].textContent = isAdmin ? "QA" : "불만";
+      document.getElementById("taskKpiText").innerHTML = isAdmin
+        ? `완료 ${done} · 진행 ${progress} · 지연 ${late}<br/>다음: QA 승인 확인`
+        : `Instagram 7 · Kakao 3 · Email 2<br/>다음: VIP 환불 문의`;
+      document.getElementById("taskRate").textContent = isAdmin ? rate + "%" : "응대";
+      document.getElementById("taskRateBar").style.width = isAdmin ? rate + "%" : "72%";
+
+      const byId = id => document.getElementById(id);
+      if(byId("dailyDone")) byId("dailyDone").textContent = isAdmin ? done + 14 : done;
+      if(byId("dailyTodo")) byId("dailyTodo").textContent = progress;
+      if(byId("dailyLate")) byId("dailyLate").textContent = isAdmin ? late : 2;
+      if(byId("dailyPercent")) byId("dailyPercent").textContent = rate + "%";
+      if(byId("dailyDonut")) byId("dailyDonut").style.setProperty("--donut", rate + "%");
+      if(byId("funnelDoneNum")) byId("funnelDoneNum").textContent = isAdmin ? done + 14 : done;
+      if(byId("funnelDone")) byId("funnelDone").style.width = Math.max(20, rate) + "%";
+      if(byId("funnelProgressNum")) byId("funnelProgressNum").textContent = isAdmin ? progress + 29 : progress;
+      if(byId("funnelProgress")) byId("funnelProgress").style.width = Math.min(100, progress * 12 + 35) + "%";
+    }
+
+    // ───────────────── 업무 관리 ─────────────────
+    function toggleTask(i){
+      tasks[i].done = !tasks[i].done;
+      if(tasks[i].done) tasks[i].progress = 100;
+      renderTasks();
+      updateKpis();
+      addFeed("업무 상태 변경", `${tasks[i].title} 상태가 업데이트되었습니다.`, ["#업무공유","#진행률"]);
+      toast("업무 상태가 갱신되었습니다.");
+    }
+
+    function editTask(i,value){
+      tasks[i].title = value;
+      renderTasks();
+      toast("업무명이 수정되었습니다.");
+    }
+
+    function openTaskModal(){
+      if(currentRole !== "admin"){
+        toast("업무 추가는 관리자 권한에서만 가능합니다.");
+        return;
+      }
+      document.getElementById("taskModal").classList.add("show");
+    }
+
+    function closeTaskModal(){
+      document.getElementById("taskModal").classList.remove("show");
+    }
+
+    function createTaskFromModal(){
+      const title = document.getElementById("newTaskTitle").value.trim() || "신규 업무";
+      const owner = document.getElementById("newTaskOwner").value;
+      const level = document.getElementById("newTaskPriority").value;
+      const project = document.getElementById("newTaskProject").value;
+      const progress = Number(document.getElementById("newTaskProgress").value);
+
+      tasks.unshift({
+        title, owner, project, level, progress,
+        done: progress >= 100
+      });
+
+      closeTaskModal();
+      renderTasks();
+      renderHeatmap();
+      updateKpis();
+      addFeed("업무 배정", `${owner}에게 '${title}' 업무가 배정되었습니다.`, ["#업무배정", "#" + level]);
+      toast("신규 업무가 추가되고 KPI가 갱신되었습니다.");
+    }
+
+    // ───────────────── 채팅/피드/메모 ─────────────────
+    function sendChat(){
+      const input = document.getElementById("chatInput");
+      if(!input.value.trim()) return;
+      chats.push({from: currentRole === "admin" ? "관리자" : "한서윤", text: input.value.trim()});
+      input.value = "";
+      renderComm();
+      toast("팀 채팅이 전송되었습니다.");
+    }
+
+    function addFeed(from,text,tags){
+      feeds.unshift({from,text,tags});
+      renderComm();
+    }
+
+    function saveNotes(){
+      const notes = [...document.querySelectorAll(".note")].map(n=>n.value);
+      localStorage.setItem("finalDashNotes", JSON.stringify(notes));
+    }
+
+    function loadNotes(){
+      const notes = JSON.parse(localStorage.getItem("finalDashNotes") || "null");
+      if(notes){
+        document.querySelectorAll(".note").forEach((n,i)=> n.value = notes[i] || n.value);
+      }
+    }
+
+    function sendReport(){
+      addFeed("결산 자동화", "일일 결산 리포트가 Gmail 발송 대기열에 등록되었습니다.", ["#결산","#Gmail"]);
+      toast("일일 결산 Gmail 발송 데모 완료");
+    }
+
+    function toast(msg){
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(()=>t.classList.remove("show"),2300);
+    }
+
+    // ── 초기 실행 ──
+    renderAll();
+  </script>
+</body>
+</html>
+<style id="compact-kpi-override">
+/* 최종 압축: KPI 영역을 42px 요약 바로 고정 */
+.dashboard{grid-template-rows:50px 42px 1fr 150px 34px !important;}
+.kpi{grid-template-columns:auto auto 1fr !important;grid-template-rows:16px 14px !important;padding:6px 10px !important;}
+.kpi-text{white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;min-height:0 !important;font-size:8.2px !important;}
+.kpi-text br{display:none !important;}
+.kpi .mini-row{grid-column:3 !important;grid-row:2 !important;font-size:7.8px !important;}
+.kpi .spark{grid-column:3 !important;grid-row:2 !important;height:12px !important;}
+
+/* ── 사원 모드 차별화: 개인 워크스페이스 느낌 강화 ── */
+    .dashboard.staff-mode .project-panel{
+      background:linear-gradient(145deg,rgba(74,163,255,.08),rgba(64,224,208,.045));
+      border-color:rgba(64,224,208,.18);
+    }
+
+    .dashboard.staff-mode .analysis-panel{
+      background:linear-gradient(145deg,rgba(167,139,250,.08),rgba(255,255,255,.035));
+    }
+
+    .dashboard.staff-mode .heatmap-panel h2::after{
+      content:" · 개인 비교";
+      color:var(--cyan);
+      font-size:9px;
+      font-weight:700;
+    }
+
+    .staff-today-card{
+      height:100%;
+      display:grid;
+      grid-template-rows:auto auto 1fr auto;
+      gap:6px;
+    }
+
+    .staff-profile-line{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+      padding:7px;
+      border-radius:12px;
+      background:rgba(255,255,255,.065);
+      border:1px solid var(--line2);
+    }
+
+    .staff-profile-line b{font-size:10px}
+    .staff-profile-line span{font-size:8px;color:var(--muted)}
+
+    .staff-focus-list{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:5px;
+    }
+
+    .staff-focus{
+      padding:7px;
+      border-radius:11px;
+      background:rgba(3,7,18,.18);
+      border:1px solid var(--line2);
+    }
+
+    .staff-focus strong{display:block;font-size:13px;color:#fff;line-height:1}
+    .staff-focus span{display:block;margin-top:4px;font-size:7.6px;color:var(--muted)}
+
+    .staff-routine{
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      overflow:auto;
+      min-height:0;
+    }
+
+    .routine-item{
+      display:grid;
+      grid-template-columns:36px 1fr auto;
+      gap:6px;
+      align-items:center;
+      padding:6px;
+      border-radius:10px;
+      background:rgba(255,255,255,.055);
+      border:1px solid var(--line2);
+      font-size:8.4px;
+    }
+
+    .routine-item b{color:#fff;font-size:8.6px}
+    .routine-item span{color:var(--muted);font-size:7.5px}
+
+    .staff-privacy-note{
+      padding:6px;
+      border-radius:10px;
+      background:rgba(74,222,128,.10);
+      border:1px solid rgba(74,222,128,.18);
+      color:#d9ffe5;
+      font-size:8.2px;
+      line-height:1.32;
+    }
+
+    
+/* ───────────────── 사원 전용 Customer Success Workspace ───────────────── */
+    .staff-mode .project-panel h2,
+    .staff-mode .analysis-panel h2,
+    .staff-mode .heatmap-panel h2,
+    .staff-mode .ai-panel h2{color:#dffcff}
+
+    .staff-company-box,
+    .personal-todo-box{
+      padding:7px;
+      border-radius:13px;
+      border:1px solid var(--line2);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .staff-company-box{
+      background:linear-gradient(145deg,rgba(74,163,255,.13),rgba(64,224,208,.07));
+      border-color:rgba(74,163,255,.25);
+    }
+
+    .personal-todo-box{
+      background:linear-gradient(145deg,rgba(250,204,21,.22),rgba(167,139,250,.08));
+      border-color:rgba(250,204,21,.25);
+    }
+
+    .staff-section-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+      font-size:9.5px;
+      color:#fff;
+      font-weight:900;
+    }
+
+    .staff-section-title span{font-size:7.8px;color:var(--muted);font-weight:500}
+
+    .staff-work-item{
+      display:grid;
+      grid-template-columns:14px 1fr auto;
+      gap:6px;
+      align-items:center;
+      padding:6px;
+      border-radius:10px;
+      background:rgba(3,7,18,.18);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .staff-work-item input[type="checkbox"]{accent-color:var(--cyan)}
+    .staff-work-title{font-size:9px;color:#fff;line-height:1.25}
+    .staff-work-meta{margin-top:2px;font-size:7.8px;color:var(--muted)}
+
+    .personal-add-row{display:grid;grid-template-columns:1fr 28px;gap:5px}
+    .personal-add-row input{
+      height:25px;border-radius:8px;border:1px solid rgba(250,204,21,.25);
+      background:rgba(3,7,18,.22);color:#fff8d5;padding:0 7px;font-size:8.5px;
+    }
+    .personal-add-row button{border-radius:8px;background:rgba(250,204,21,.26);color:#fff8d5;border:1px solid rgba(250,204,21,.28);font-weight:900}
+
+    .personal-list{display:flex;flex-direction:column;gap:4px;max-height:80px;overflow:auto;padding-right:2px}
+    .personal-item{display:grid;grid-template-columns:14px 1fr 16px;gap:5px;align-items:center;font-size:8.6px;color:#fff8d5;padding:4px 5px;border-radius:8px;background:rgba(255,255,255,.065)}
+    .personal-item input{accent-color:var(--yellow)}
+    .personal-item.done span{text-decoration:line-through;color:rgba(255,248,213,.55)}
+    .personal-item button{width:16px;height:16px;border-radius:6px;background:rgba(255,255,255,.08);color:#fff8d5;font-size:9px;padding:0}
+
+    .customer-queue{
+      height:calc(100% - 30px);
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:6px;
+      min-height:0;
+    }
+    .queue-col{min-height:0;padding:6px;border-radius:13px;background:rgba(3,7,18,.18);border:1px solid var(--line2);display:flex;flex-direction:column;gap:5px}
+    .queue-title{display:flex;justify-content:space-between;align-items:center;font-size:8.8px;font-weight:900;color:#fff;margin-bottom:1px}
+    .queue-title span{font-size:7.2px;color:var(--muted);font-weight:500}
+    .queue-card{padding:6px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid var(--line2);font-size:8.2px;line-height:1.28;color:#dbeafe}
+    .queue-card b{display:block;color:#fff;font-size:8.7px;margin-bottom:2px}
+    .queue-card .q-meta{display:flex;justify-content:space-between;gap:4px;margin-top:4px;color:var(--muted);font-size:7.2px}
+    .queue-card.urgent{border-color:rgba(251,113,133,.45);background:rgba(251,113,133,.13)}
+    .queue-card.vip{border-color:rgba(167,139,250,.45);background:rgba(167,139,250,.13)}
+    .queue-card.done{border-color:rgba(74,222,128,.36);background:rgba(74,222,128,.11)}
+
+    .sns-inbox{height:calc(100% - 30px);display:flex;flex-direction:column;gap:5px;min-height:0;overflow:auto;padding-right:2px}
+    .sns-row{display:grid;grid-template-columns:38px 54px 1fr 42px;gap:5px;align-items:center;padding:6px;border-radius:10px;background:rgba(255,255,255,.055);border:1px solid var(--line2);font-size:8.2px;color:#dbeafe}
+    .sns-row b{color:#fff;font-size:8.5px}.sns-row span{color:var(--muted);font-size:7.5px}
+    .status-vip{color:#eadfff!important;background:rgba(167,139,250,.16);border:1px solid rgba(167,139,250,.24);border-radius:999px;padding:2px 4px;text-align:center}
+    .status-warn{color:#ffd6de!important;background:rgba(251,113,133,.16);border:1px solid rgba(251,113,133,.25);border-radius:999px;padding:2px 4px;text-align:center}
+    .status-normal{color:#dcefff!important;background:rgba(74,163,255,.16);border:1px solid rgba(74,163,255,.25);border-radius:999px;padding:2px 4px;text-align:center}
+    .status-done{color:#c8ffd8!important;background:rgba(74,222,128,.14);border:1px solid rgba(74,222,128,.25);border-radius:999px;padding:2px 4px;text-align:center}
+
+    .staff-mode .ai-grid{grid-template-columns:repeat(4,1fr)}
+    .staff-mode .ai-card{background:linear-gradient(145deg,rgba(64,224,208,.10),rgba(74,163,255,.055))}
+    .staff-mode .chart-card h3{color:#dffcff}
+    .keyword-cloud{display:flex;flex-wrap:wrap;gap:5px;align-content:center;min-height:88px}
+    .keyword-cloud span{padding:5px 7px;border-radius:999px;background:rgba(64,224,208,.12);border:1px solid rgba(64,224,208,.22);font-size:8.6px;color:#dffcff}
+
+
+    /* ─────────────────────────────────────────
+       안정화 패치 v07
+       - 06의 급격한 zone 재배치를 되돌리고 05의 안정 구조 유지
+       - 기능 삭제 없이 카드 구분감만 강화
+       - 사원 모드에서 각 영역의 목적이 시각적으로 분리되도록 처리
+    ───────────────────────────────────────── */
+    .dashboard.staff-mode .panel{
+      position:relative;
+      box-shadow:0 12px 32px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.035);
+    }
+
+    .dashboard.staff-mode .panel-head{
+      margin:-1px -1px 8px;
+      padding:8px 9px 7px;
+      border-radius:14px 14px 10px 10px;
+      border-bottom:1px solid rgba(255,255,255,.09);
+      background:linear-gradient(90deg,rgba(255,255,255,.075),rgba(255,255,255,.025));
+    }
+
+    .dashboard.staff-mode .todo-panel{
+      background:linear-gradient(145deg,rgba(74,163,255,.14),rgba(6,18,34,.72));
+      border-color:rgba(74,163,255,.34);
+    }
+
+    .dashboard.staff-mode .project-panel{
+      background:linear-gradient(145deg,rgba(64,224,208,.13),rgba(6,18,34,.72));
+      border-color:rgba(64,224,208,.34);
+    }
+
+    .dashboard.staff-mode .analysis-panel{
+      background:linear-gradient(145deg,rgba(167,139,250,.14),rgba(6,18,34,.72));
+      border-color:rgba(167,139,250,.34);
+    }
+
+    .dashboard.staff-mode .heatmap-panel{
+      background:linear-gradient(145deg,rgba(20,184,166,.13),rgba(6,18,34,.72));
+      border-color:rgba(20,184,166,.34);
+    }
+
+    .dashboard.staff-mode .comm-panel{
+      background:linear-gradient(145deg,rgba(251,146,60,.12),rgba(6,18,34,.72));
+      border-color:rgba(251,146,60,.32);
+    }
+
+    .dashboard.staff-mode .ai-panel{
+      background:linear-gradient(145deg,rgba(139,92,246,.13),rgba(6,18,34,.72));
+      border-color:rgba(167,139,250,.32);
+    }
+
+    .dashboard.staff-mode .notes-panel{
+      background:linear-gradient(145deg,rgba(250,204,21,.11),rgba(6,18,34,.72));
+      border-color:rgba(250,204,21,.30);
+    }
+
+    .dashboard.staff-mode .staff-company-box{
+      border:1px solid rgba(74,163,255,.42);
+      box-shadow:0 0 0 1px rgba(74,163,255,.08),0 10px 24px rgba(74,163,255,.08);
+      background:linear-gradient(145deg,rgba(74,163,255,.20),rgba(8,22,42,.62));
+    }
+
+    .dashboard.staff-mode .personal-todo-box{
+      border:1px solid rgba(250,204,21,.45);
+      box-shadow:0 0 0 1px rgba(250,204,21,.10),0 10px 24px rgba(250,204,21,.08);
+      background:linear-gradient(145deg,rgba(250,204,21,.25),rgba(88,63,16,.18));
+    }
+
+    .dashboard.staff-mode .staff-section-title{
+      padding-bottom:5px;
+      border-bottom:1px dashed rgba(255,255,255,.13);
+    }
+
+    .dashboard.staff-mode .staff-work-item,
+    .dashboard.staff-mode .queue-card,
+    .dashboard.staff-mode .sns-row,
+    .dashboard.staff-mode .ai-card,
+    .dashboard.staff-mode .feed-item,
+    .dashboard.staff-mode .chat-msg{
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+    }
+
+    .dashboard.staff-mode .staff-focus{
+      border-color:rgba(64,224,208,.20);
+      background:rgba(3,7,18,.26);
+    }
+
+    .dashboard.staff-mode .routine-item{
+      border-color:rgba(255,255,255,.12);
+      background:rgba(255,255,255,.07);
+    }
+
+    .dashboard.staff-mode .analytics .chart-card{
+      background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(3,7,18,.20));
+      border-color:rgba(255,255,255,.13);
+    }
+
+    .dashboard.staff-mode .kpi{
+      border-color:rgba(64,224,208,.18);
+      background:linear-gradient(145deg,rgba(64,224,208,.075),rgba(255,255,255,.04));
+    }
+
+  
+
+    /* ─────────────────────────────────────────
+       v08 화면 안정화 패치
+       - 전체 대시보드는 16:9 고정
+       - 긴 내용은 카드 내부에서만 스크롤
+       - 사원 업무 체크리스트/근무 보드 내용 잘림 방지
+    ───────────────────────────────────────── */
+    .dashboard.staff-mode{
+      overflow:hidden !important;
+    }
+
+    .dashboard.staff-mode .todo-list{
+      height:calc(100% - 38px) !important;
+      max-height:calc(100% - 38px) !important;
+      overflow:hidden !important;
+      display:grid !important;
+      grid-template-rows:minmax(0,1.35fr) minmax(0,.85fr) !important;
+      gap:7px !important;
+      padding-right:0 !important;
+    }
+
+    .dashboard.staff-mode .staff-company-box,
+    .dashboard.staff-mode .personal-todo-box{
+      min-height:0 !important;
+      overflow:hidden !important;
+    }
+
+    .staff-work-scroll{
+      min-height:0;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      padding-right:2px;
+    }
+
+    .dashboard.staff-mode .staff-work-item{
+      padding:5px 6px !important;
+      grid-template-columns:13px minmax(0,1fr) auto !important;
+    }
+
+    .dashboard.staff-mode .staff-work-title{
+      font-size:8.55px !important;
+      line-height:1.22 !important;
+      white-space:normal !important;
+      word-break:keep-all !important;
+    }
+
+    .dashboard.staff-mode .staff-work-meta{
+      font-size:7.35px !important;
+      line-height:1.25 !important;
+      white-space:nowrap !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+      max-width:100% !important;
+    }
+
+    .dashboard.staff-mode .personal-list{
+      min-height:0 !important;
+      max-height:none !important;
+      overflow:auto !important;
+    }
+
+    .dashboard.staff-mode .project-list{
+      height:calc(100% - 38px) !important;
+      display:block !important;
+      overflow:hidden !important;
+    }
+
+    .dashboard.staff-mode .staff-today-card{
+      height:100% !important;
+      min-height:0 !important;
+      display:grid !important;
+      grid-template-rows:auto auto minmax(0,1fr) auto auto !important;
+      gap:5px !important;
+      overflow:hidden !important;
+    }
+
+    .dashboard.staff-mode .staff-profile-line{
+      padding:6px !important;
+      align-items:flex-start !important;
+    }
+
+    .dashboard.staff-mode .staff-profile-line b{
+      display:block !important;
+      font-size:8.7px !important;
+      line-height:1.2 !important;
+      white-space:nowrap !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+      max-width:170px !important;
+    }
+
+    .dashboard.staff-mode .staff-profile-line span{
+      display:block !important;
+      font-size:7.2px !important;
+      line-height:1.25 !important;
+    }
+
+    .dashboard.staff-mode .staff-focus-list{
+      grid-template-columns:repeat(4,1fr) !important;
+      gap:4px !important;
+    }
+
+    .dashboard.staff-mode .staff-focus{
+      padding:5px !important;
+      min-width:0 !important;
+    }
+
+    .dashboard.staff-mode .staff-focus strong{
+      font-size:11.5px !important;
+    }
+
+    .dashboard.staff-mode .staff-focus span{
+      font-size:6.7px !important;
+      white-space:nowrap !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+    }
+
+    .dashboard.staff-mode .staff-routine{
+      min-height:0 !important;
+      overflow:auto !important;
+      padding-right:2px !important;
+      border-radius:10px !important;
+    }
+
+    .dashboard.staff-mode .routine-item{
+      grid-template-columns:31px minmax(0,1fr) auto !important;
+      padding:5px !important;
+      gap:5px !important;
+    }
+
+    .dashboard.staff-mode .routine-item div{
+      min-width:0 !important;
+      font-size:7.8px !important;
+      line-height:1.2 !important;
+      white-space:nowrap !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+    }
+
+    .dashboard.staff-mode .routine-item b{
+      font-size:7.8px !important;
+    }
+
+    .dashboard.staff-mode .routine-item div span{
+      display:block !important;
+      font-size:6.8px !important;
+      white-space:nowrap !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+    }
+
+    .staff-focus-check-grid{
+      display:grid;
+      grid-template-columns:1fr 1.25fr;
+      gap:5px;
+      min-height:0;
+    }
+
+    .staff-timer-card,
+    .staff-close-card{
+      min-width:0;
+      padding:6px;
+      border-radius:11px;
+      border:1px solid var(--line2);
+      overflow:hidden;
+    }
+
+    .staff-timer-card{background:rgba(255,255,255,.06)}
+    .staff-close-card{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.24)}
+    .staff-mini-label{font-size:7.4px;color:var(--muted);margin-bottom:2px;white-space:nowrap}
+    .staff-mini-label.warn{color:#fde68a}
+    .staff-timer-time{font-size:14px;font-weight:900;line-height:1.05}
+    .staff-mini-desc{font-size:7.1px;color:#dbeafe;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+    .staff-close-list{font-size:7.05px;line-height:1.35;color:#fff8d5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    .dashboard.staff-mode .staff-privacy-note{
+      padding:5px 6px !important;
+      font-size:7.1px !important;
+      line-height:1.25 !important;
+      max-height:30px !important;
+      overflow:hidden !important;
+    }
+
+    .dashboard.staff-mode .comm-scroll,
+    .dashboard.staff-mode .sns-inbox,
+    .dashboard.staff-mode .customer-queue,
+    .dashboard.staff-mode .hub-action-list{
+      min-height:0 !important;
+      overflow:auto !important;
+    }
+
+
+/* ─────────────────────────────────────────
+   v09 Staff To-do Visibility Patch
+   - 사원 모드에서 투두 패널을 세로 2칸으로 확장
+   - 회사 업무 / 개인 To-do가 둘 다 보이도록 내부 높이 재분배
+   - 작은 해상도에서도 텍스트 잘림 최소화
+───────────────────────────────────────── */
+.dashboard.staff-mode .main-grid{
+  grid-template-columns:1.2fr 1fr 1fr 1.12fr 1.12fr !important;
+  grid-template-rows:minmax(0,1fr) 124px !important;
+  grid-template-areas:
+    "todo project analytics comm comm"
+    "todo ai heatmap heatmap notes" !important;
+}
+
+.dashboard.staff-mode .todo-panel{
+  padding:7px !important;
+  overflow:hidden !important;
+  min-width:0 !important;
+}
+
+.dashboard.staff-mode .todo-panel .panel-head{
+  margin:-1px -1px 7px !important;
+  padding:7px 8px 6px !important;
+}
+
+.dashboard.staff-mode #todoList.todo-list{
+  height:calc(100% - 36px) !important;
+  max-height:calc(100% - 36px) !important;
+  display:grid !important;
+  grid-template-rows:minmax(0,1.05fr) minmax(118px,.95fr) !important;
+  gap:7px !important;
+  overflow:hidden !important;
+}
+
+.dashboard.staff-mode .staff-company-box,
+.dashboard.staff-mode .personal-todo-box{
+  min-height:0 !important;
+  overflow:hidden !important;
+  padding:7px !important;
+}
+
+.dashboard.staff-mode .staff-work-scroll{
+  min-height:0 !important;
+  overflow:auto !important;
+}
+
+.dashboard.staff-mode .personal-todo-box{
+  display:grid !important;
+  grid-template-rows:auto 27px minmax(0,1fr) !important;
+}
+
+.dashboard.staff-mode .personal-list{
+  min-height:0 !important;
+  max-height:none !important;
+  overflow:auto !important;
+  padding-right:2px !important;
+}
+
+.dashboard.staff-mode .personal-item{
+  min-height:24px !important;
+  grid-template-columns:14px minmax(0,1fr) 17px !important;
+}
+
+.dashboard.staff-mode .personal-item span{
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+.dashboard.staff-mode .staff-work-title{
+  font-size:8.8px !important;
+  line-height:1.25 !important;
+}
+
+.dashboard.staff-mode .staff-work-meta{
+  font-size:7.45px !important;
+}
+
+.dashboard.staff-mode .chip{
+  font-size:7.1px !important;
+  padding:2.5px 4.5px !important;
+}
+
+.dashboard.staff-mode .ai-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:5px !important;
+}
+
+.dashboard.staff-mode .ai-card{
+  padding:6px !important;
+}
+
+.dashboard.staff-mode .ai-card p{
+  font-size:7.7px !important;
+  line-height:1.32 !important;
+}
+
+@media (max-width:1320px){
+  .screen{
+    min-width:1180px !important;
+    min-height:664px !important;
+  }
+  .dashboard.staff-mode .main-grid{
+    grid-template-columns:1.26fr .98fr .98fr 1.05fr 1.05fr !important;
+  }
+  .dashboard.staff-mode .staff-work-title{font-size:8.35px !important;}
+  .dashboard.staff-mode .staff-work-meta{font-size:7.1px !important;}
+}
+
+  
+
+
+/* v23 AI panel clipping fix */
+.dashboard.staff-mode .ai-panel,
+.ai-panel{
+  overflow:hidden !important;
+}
+.dashboard.staff-mode .ai-grid,
+.ai-grid{
+  height:calc(100% - 26px) !important;
+  align-items:stretch !important;
+}
+.dashboard.staff-mode .ai-card,
+.ai-card{
+  min-height:0 !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+.dashboard.staff-mode .ai-card strong,
+.ai-card strong{
+  white-space:normal !important;
+  line-height:1.25 !important;
+  font-size:9px !important;
+}
+.dashboard.staff-mode .ai-card p,
+.ai-card p{
+  white-space:normal !important;
+  word-break:keep-all !important;
+  overflow-wrap:anywhere !important;
+  line-height:1.28 !important;
+  font-size:7.6px !important;
+  flex:1 1 auto !important;
+}
+
+
+/* v24 compact text patch for AI + notes */
+.ai-panel .ai-card strong,
+.dashboard.staff-mode .ai-panel .ai-card strong{
+  font-size:8.2px !important;
+  margin-bottom:3px !important;
+}
+.ai-panel .ai-card p,
+.dashboard.staff-mode .ai-panel .ai-card p{
+  font-size:7px !important;
+  line-height:1.18 !important;
+}
+.ai-panel .ai-card .action,
+.dashboard.staff-mode .ai-panel .ai-card .action{
+  font-size:6.8px !important;
+  margin-top:3px !important;
+}
+.notes-panel .note,
+.dashboard.staff-mode .notes-panel .note{
+  font-size:8px !important;
+  line-height:1.18 !important;
+  padding:5px !important;
+}
+.notes-grid{
+  gap:3px !important;
+}
+
+
+/* v25 AI header compact */
+.ai-panel .panel-head h2,
+.dashboard.staff-mode .ai-panel .panel-head h2{
+  font-size:9.2px !important;
+}
+.ai-panel .desc,
+.dashboard.staff-mode .ai-panel .desc{
+  font-size:7.2px !important;
+  margin-top:1px !important;
+}
+.ai-panel .mini-btn,
+.dashboard.staff-mode .ai-panel .mini-btn{
+  min-height:19px !important;
+  padding:0 6px !important;
+  font-size:7.2px !important;
+}
+
+</style>
