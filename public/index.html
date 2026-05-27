@@ -1443,6 +1443,20 @@
       gap:6px;
     }
 
+    /* Gmail 발송 버튼 클릭 안정화: 기존 UI 유지 */
+    #footerReportBtn{
+      position:relative;
+      z-index:20;
+      cursor:pointer;
+      pointer-events:auto;
+    }
+    .footer-actions{
+      position:relative;
+      z-index:20;
+      pointer-events:auto;
+    }
+
+
     /* ── 모달 ── */
     .modal{
       position:fixed;
@@ -2461,7 +2475,113 @@ body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
   .dashboard.staff-mode .chart-card h3{ font-size:8.8px !important; }
 }
 
-</style>
+
+
+/* v30 staff UI balance patch: compact post-it, wider AI assistant, balanced analytics */
+.dashboard.staff-mode .main-grid{
+  grid-template-columns:1.14fr 1.18fr 1.08fr 1.02fr .74fr !important;
+  grid-template-rows:minmax(0,1fr) 124px !important;
+  grid-template-areas:
+    "todo project analytics comm comm"
+    "todo ai ai heatmap notes" !important;
+}
+.dashboard.staff-mode .ai-panel{min-width:0 !important;}
+.dashboard.staff-mode .ai-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:5px !important;
+}
+.dashboard.staff-mode .ai-panel .ai-card{
+  padding:6px 7px !important;
+  min-height:0 !important;
+}
+.dashboard.staff-mode .ai-panel .ai-card p{
+  font-size:7.4px !important;
+  line-height:1.28 !important;
+  word-break:keep-all !important;
+}
+.dashboard.staff-mode .ai-panel .ai-card .action{
+  font-size:7.1px !important;
+  line-height:1.22 !important;
+}
+.dashboard.staff-mode .notes-panel{
+  padding:6px !important;
+}
+.dashboard.staff-mode .notes-panel .panel-head{
+  margin-bottom:4px !important;
+}
+.dashboard.staff-mode .notes-panel .panel-head h2{
+  font-size:10px !important;
+}
+.dashboard.staff-mode .notes-panel .desc{
+  font-size:7.4px !important;
+  white-space:normal !important;
+}
+.dashboard.staff-mode .notes-grid{
+  height:calc(100% - 27px) !important;
+  gap:3px !important;
+}
+.dashboard.staff-mode .notes-panel .note{
+  padding:4px 5px !important;
+  font-size:7.3px !important;
+  line-height:1.18 !important;
+}
+.dashboard.staff-mode .analytics{
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  gap:6px !important;
+}
+.dashboard.staff-mode .chart-card{
+  padding:7px 8px !important;
+}
+.dashboard.staff-mode .chart-card h3{
+  align-items:flex-start !important;
+  font-size:9.5px !important;
+  line-height:1.15 !important;
+}
+.dashboard.staff-mode .donut-wrap{
+  grid-template-columns:minmax(44px,54px) minmax(0,1fr) !important;
+  gap:9px !important;
+  justify-content:center !important;
+}
+.dashboard.staff-mode .donut{
+  width:54px !important;
+  height:54px !important;
+}
+.dashboard.staff-mode .donut::after{
+  width:35px !important;
+  height:35px !important;
+}
+.dashboard.staff-mode .legend-list{
+  gap:4px !important;
+  justify-content:center !important;
+}
+.dashboard.staff-mode .legend-list div{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  gap:5px !important;
+  font-size:7.8px !important;
+}
+.dashboard.staff-mode .stack-list{
+  min-height:76px !important;
+  justify-content:center !important;
+}
+.dashboard.staff-mode .keyword-cloud{
+  justify-content:center !important;
+  align-content:center !important;
+  text-align:center !important;
+  gap:4px !important;
+}
+.dashboard.staff-mode .keyword-cloud span{
+  font-size:7.6px !important;
+  padding:4px 6px !important;
+}
+.dashboard.staff-mode .chart-foot{
+  font-size:8px !important;
+  line-height:1.22 !important;
+  text-align:left !important;
+}
+
+  </style>
 <style id="compact-kpi-override">
 /* 최종 압축: KPI 영역을 42px 요약 바로 고정 */
 .dashboard{grid-template-rows:50px 42px 1fr 150px 34px !important;}
@@ -3516,7 +3636,7 @@ body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
         <footer>
           <div>Integrated Cloud Services Active · Secure Auth · Mail Automation · Activity Archive Live</div>
           <div class="footer-actions">
-            <button class="pill green" onclick="sendReport()">일일 결산 Gmail 발송</button>
+            <button class="pill green" id="footerReportBtn" type="button" onclick="sendReport(event)">일일 결산 Gmail 발송</button>
             <button class="pill" onclick="toast('모든 기능 온라인 활성화 상태를 확인했습니다.')">기능 활성화 확인</button>
           </div>
         </footer>
@@ -3666,10 +3786,20 @@ body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
     ];
 
     let personalTodos = JSON.parse(localStorage.getItem("staffPersonalTodos") || "null") || [
-      {text:"교수님 메일 보내기", done:false},
-      {text:"발표 자료 수정", done:false},
-      {text:"장학금 서류 확인", done:false}
+      {text:"환불 승인 요청 검토", done:false},
+      {text:"배송 지연 고객 후속 응대", done:false},
+      {text:"일일 CS 리포트 최종 확인", done:false}
     ];
+
+    // 제출용 업무 컨셉에 맞지 않는 이전 개인 To-do 샘플이 남아 있으면 자동 교체
+    if(personalTodos.some(t => /교수님|발표 자료|장학금/.test(t.text))){
+      personalTodos = [
+        {text:"환불 승인 요청 검토", done:false},
+        {text:"배송 지연 고객 후속 응대", done:false},
+        {text:"일일 CS 리포트 최종 확인", done:false}
+      ];
+      localStorage.setItem("staffPersonalTodos", JSON.stringify(personalTodos));
+    }
 
     const adminAnalysisHTML = document.querySelector(".analysis-grid").innerHTML;
     const adminAnalyticsHTML = document.querySelector(".analytics").innerHTML;
@@ -4275,8 +4405,11 @@ function renderComm(){
       }
     }
 
-    async function sendReport(){
+    async function sendReport(event){
+      if(event && event.preventDefault) event.preventDefault();
+      const btn = document.getElementById("footerReportBtn");
       try{
+        if(btn){ btn.disabled = true; btn.textContent = "발송 중..."; }
         toast("Gmail 발송 요청 중...");
         const res = await fetch("/api/send-report", {
           method: "POST",
@@ -4290,13 +4423,17 @@ function renderComm(){
           addFeed("결산 자동화", `일일 결산 리포트가 처리되었습니다. (${modeText})`, ["#결산","#Gmail"]);
           toast(modeText);
         }else{
-          toast("Gmail 발송 실패: Railway Variables 확인");
+          toast(result.error ? "Gmail 발송 실패: " + result.error : "Gmail 발송 실패: Railway Variables 확인");
         }
       }catch(error){
         console.error(error);
         toast("Gmail 발송 오류: 서버 연결 확인");
+      }finally{
+        if(btn){ btn.disabled = false; btn.textContent = "일일 결산 Gmail 발송"; }
       }
     }
+
+    window.sendReport = sendReport;
 
     function toast(msg){
       const t = document.getElementById("toast");
@@ -4308,6 +4445,13 @@ function renderComm(){
     // ── 초기 실행 ──
     renderAll();
     checkGoogleSession();
+      document.addEventListener("DOMContentLoaded", () => {
+      init();
+      const reportBtn = document.getElementById("footerReportBtn");
+      if(reportBtn){
+        reportBtn.addEventListener("click", sendReport);
+      }
+    });
   </script>
 </body>
 

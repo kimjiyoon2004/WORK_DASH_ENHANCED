@@ -80,3 +80,15 @@ https://workdashenhanced-production.up.railway.app/auth/google/callback
 ```
 
 `googleOAuth: true`, `gmail: true`가 나오면 환경변수가 정상 적용된 것입니다.
+
+
+## 2026-05-27 수정
+- 기존 UI는 유지하고 하단 `일일 결산 Gmail 발송` 버튼 클릭 안정화만 반영했습니다.
+- 상단 테스트용 Gmail 버튼은 추가하지 않았습니다.
+
+
+## v30 UI polish
+- 개인 To-do 샘플을 업무형 문구로 수정
+- 포스트잇 영역 폭 축소 및 내부 여백 정리
+- AI Ops Assistant 카드 폭 확장
+- 사원 분석 카드 내부 정렬 개선
