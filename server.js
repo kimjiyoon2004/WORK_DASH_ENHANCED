@@ -74,9 +74,18 @@ async function sendGmailReport({ to, subject, text }) {
   }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user, pass }
-  });
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  requireTLS: true,
+  auth: {
+    user,
+    pass
+  },
+  connectionTimeout: 20000,
+  greetingTimeout: 20000,
+  socketTimeout: 30000
+});
 
   await transporter.sendMail({
     from: `Workflow OS <${user}>`,
