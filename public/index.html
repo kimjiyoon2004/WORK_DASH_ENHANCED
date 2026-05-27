@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -3882,15 +3883,26 @@ body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
     }
 
     async function logout(){
-      try{
-        await fetch("/api/logout", { method: "POST" });
-      }catch(error){
-        console.error(error);
-      }
-      document.getElementById("dashboard").classList.remove("show");
-      document.getElementById("loginPage").style.display = "grid";
-      toast("로그아웃되었습니다.");
-    }
+  try{
+    await fetch("/api/logout", { method: "POST" });
+  }catch(error){
+    console.error(error);
+  }
+
+  localStorage.removeItem("wf_user");
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("currentRole");
+  localStorage.removeItem("role");
+  localStorage.removeItem("loginRole");
+  localStorage.removeItem("selectedRole");
+  localStorage.removeItem("dashboardRole");
+  sessionStorage.clear();
+
+  document.getElementById("dashboard").classList.remove("show");
+  document.getElementById("loginPage").style.display = "grid";
+
+  toast("로그아웃되었습니다.");
+}
 
     // ───────────────── 권한별 화면 ─────────────────
     function applyRole(){
