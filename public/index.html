@@ -9,7 +9,7 @@
        Workflow OS Final Dashboard
        - 16:9 단일 화면
        - 관리자/사원 권한 분리
-       - Google 로그인 데모
+       - Google OAuth 로그인
        - 업무 추가 모달
        - KPI 자동 갱신
        - 채팅/업무피드 분리
@@ -2462,1125 +2462,6 @@ body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
 }
 
 </style>
-</head>
-<body>
-  <div class="stage">
-    <div class="screen">
-      <!-- ── 로그인 페이지 ── -->
-      <section class="login-page" id="loginPage">
-        <div class="login-left">
-          <div class="system-badge"><span class="pulse"></span> Railway Online Ready · Enterprise Workflow OS</div>
-          <div class="login-copy">
-            <h1>One Login,<br/>Role-based Dashboard</h1>
-            <p>
-              Google 계정 또는 사내 계정으로 접속한 뒤, 권한에 따라 관리자용 팀 관제 화면과 사원용 개인 업무 화면을 구분해서 보여주는
-              업무 대시보드입니다. 한 화면 안에서 업무 배정, 진행률, 채팅, 피드, 포스트잇, 결산 분석, 배포 상태를 확인합니다.
-            </p>
-          </div>
-          <div class="login-feature-grid">
-            <div class="login-feature"><strong>Admin</strong><span>업무 추가·담당자 지정·팀 전체 workload</span></div>
-            <div class="login-feature"><strong>Staff</strong><span>내 업무·완료 처리·개인 결산 중심</span></div>
-            <div class="login-feature"><strong>Google</strong><span>권한 선택 후 Google로 계속하기</span></div>
-            <div class="login-feature"><strong>Online</strong><span>GitHub/Railway/Gmail/API 상태 표시</span></div>
-          </div>
-        </div>
-
-        <div class="login-panel">
-          <h2>서비스 로그인</h2>
-          <p>역할을 먼저 선택한 뒤 관리자/사원 계정 또는 Google 계정으로 접속합니다.</p>
-
-          <div class="role-cards">
-            <button class="role-card active" id="roleAdmin" onclick="selectRole('admin')">
-              <strong>관리자 / 팀장</strong>
-              <span>업무 배정, 팀원별 업무량, 전체 결산 분석</span>
-            </button>
-            <button class="role-card" id="roleStaff" onclick="selectRole('staff')">
-              <strong>사원</strong>
-              <span>내 업무 진행률, 완료 처리, 팀 공지 확인</span>
-            </button>
-          </div>
-
-          <div class="field">
-            <label>아이디</label>
-            <input id="loginId" value="admin" />
-          </div>
-          <div class="field">
-            <label>비밀번호</label>
-            <input id="loginPw" type="password" value="1234" />
-          </div>
-
-          <div class="login-actions">
-            <button class="primary-btn" onclick="loginWithAccount()">사내 계정 로그인</button>
-            <button class="secondary-btn" onclick="fillDemo()">데모 계정 자동입력</button>
-          </div>
-          <button class="google-btn" onclick="googleLogin()">G Google로 계속하기</button>
-
-          <div class="login-note">
-            관리자: admin / 1234 · 사원: staff / 1234<br/>
-            Google 로그인은 별도 화면이 아니라 같은 로그인 페이지의 옵션으로 배치했습니다.
-          </div>
-        </div>
-      </section>
-
-      <!-- ── 대시보드 화면 ── -->
-      <main class="dashboard" id="dashboard">
-        <!-- ── 헤더 ── -->
-        <header>
-          <div class="brand">
-            <div class="logo">OS</div>
-            <div class="title">
-              <h1>Workflow OS · Operations Command Center</h1>
-              <p id="roleText">관리자 모드 · 업무 배정 / 팀 관제 / 결산 분석</p>
-            </div>
-          </div>
-          <div class="led-notice" aria-label="긴급 공지 전광판">
-            <span class="led-label">긴급 공지</span>
-            <div class="led-window">
-              <div class="led-track">
-                보안 패치 재기동 13:00~13:20 예정 <span class="led-dot">●</span> 14:00 PM 회의와 QA 리뷰 일정 충돌 <span class="led-dot">●</span> 17:00 전 결산 리포트 Gmail 발송 확인
-              </div>
-            </div>
-          </div>
-          <div class="header-actions">
-            <button class="pill blue" onclick="toast('Google OAuth 연결 상태: Ready')">Continue with Google</button>
-            <div class="pill purple" id="roleBadge">관리자</div>
-            <div class="pill green"><span class="pulse"></span> Online</div>
-            <div class="pill">Alerts <span id="noticeCount">3</span></div>
-            <button class="pill red" onclick="logout()">로그아웃</button>
-          </div>
-        </header>
-
-        <!-- ── KPI 카드 ── -->
-        <section class="kpis">
-          <div class="kpi blue">
-            <div class="kpi-top"><small>오늘 업무 상태</small><span class="delta" id="taskDelta">+3</span></div>
-            <strong id="kpiTotal">18</strong>
-            <div class="kpi-text" id="taskKpiText">완료 7 · 진행 8 · 지연 3<br/>다음: QA 승인 확인</div>
-            <div class="mini-row"><span>처리율</span><div class="tiny-bar"><div class="tiny-fill" id="taskRateBar" style="width:61%"></div></div><span id="taskRate">61%</span></div>
-          </div>
-
-          <div class="kpi green">
-            <div class="kpi-top"><small>완료율</small><span class="delta">자동갱신</span></div>
-            <strong id="kpiDoneRate">83%</strong>
-            <div class="kpi-text">완료 체크 시 즉시 반영<br/>부서 평균 대비 비교</div>
-            <div class="spark" id="doneSpark"><i style="height:38%"></i><i style="height:52%"></i><i style="height:70%"></i><i style="height:83%"></i></div>
-          </div>
-
-          <div class="kpi red">
-            <div class="kpi-top"><small>SLA 위험</small><span class="delta warn">즉시</span></div>
-            <strong id="kpiSla">3</strong>
-            <div class="kpi-text">보안패치 18m<br/>QA검토 1.4h</div>
-            <div class="mini-row"><span>조치</span><div class="tiny-bar"><div class="tiny-fill" style="width:86%;background:var(--red)"></div></div><span>High</span></div>
-          </div>
-
-          <div class="kpi yellow">
-            <div class="kpi-top"><small>병목 지점</small><span class="delta warn">주의</span></div>
-            <strong>QA</strong>
-            <div class="kpi-text">검토 단계 전환율 낮음<br/>리뷰 인력 분산 필요</div>
-            <div class="spark"><i style="height:26%;background:var(--yellow)"></i><i style="height:72%;background:var(--red)"></i><i style="height:48%;background:var(--yellow)"></i></div>
-          </div>
-
-          <div class="kpi purple">
-            <div class="kpi-top"><small>예측 지연 업무</small><span class="delta warn">AI</span></div>
-            <strong>2</strong>
-            <div class="kpi-text">보안 리뷰 · QA 승인<br/>17시 전 조치 권장</div>
-            <div class="mini-row"><span>예측</span><div class="tiny-bar"><div class="tiny-fill" style="width:74%;background:linear-gradient(90deg,var(--purple),var(--cyan))"></div></div><span>74%</span></div>
-          </div>
-
-          <div class="kpi orange">
-            <div class="kpi-top"><small>자동화 절감</small><span class="delta">+1.2h</span></div>
-            <strong>4.2h</strong>
-            <div class="kpi-text">결산 자동작성<br/>Gmail 발송 대기</div>
-            <div class="spark"><i style="height:38%;background:var(--orange)"></i><i style="height:72%;background:var(--green)"></i><i style="height:88%;background:var(--green)"></i></div>
-          </div>
-
-          <div class="kpi blue">
-            <div class="kpi-top"><small>일정 충돌</small><span class="delta warn">1건</span></div>
-            <strong>14:00</strong>
-            <div class="kpi-text">PM 회의 / QA 리뷰<br/>시간대 혼잡</div>
-            <div class="mini-row"><span>오후</span><div class="tiny-bar"><div class="tiny-fill" style="width:72%"></div></div><span>혼잡</span></div>
-          </div>
-
-          <div class="kpi red">
-            <div class="kpi-top"><small>긴급 이슈</small><span class="delta warn">HIGH</span></div>
-            <strong>4</strong>
-            <div class="kpi-text">장애 1 · 보안 1<br/>승인대기 2</div>
-            <div class="spark"><i style="height:75%;background:var(--red)"></i><i style="height:48%;background:var(--orange)"></i><i style="height:62%;background:var(--red)"></i></div>
-          </div>
-        </section>
-
-        <!-- ── 메인 영역 ── -->
-        <section class="main-grid">
-          <!-- 업무 보드 -->
-          <article class="panel todo-panel">
-            <div class="panel-head">
-              <div>
-                <h2 id="taskPanelTitle">팀 업무 분장 · To-do</h2>
-                <div class="desc" id="taskPanelDesc">관리자: 업무 추가/수정/담당자 지정 가능</div>
-              </div>
-              <button class="mini-btn" id="addTodoBtn" onclick="openTaskModal()">+ 업무</button>
-            </div>
-            <div class="todo-list" id="todoList"></div>
-          </article>
-
-          <!-- 프로젝트 -->
-          <article class="panel project-panel">
-            <div class="panel-head">
-              <div>
-                <h2>프로젝트 운영 관제</h2>
-                <div class="desc">PM / 예산 / D-day / 진행률</div>
-              </div>
-              <button class="mini-btn" onclick="toast('프로젝트 데이터 동기화 완료')">Sync</button>
-            </div>
-            <div class="project-list" id="projectList"></div>
-          </article>
-
-          <!-- 운영 분석 -->
-          <article class="panel analysis-panel">
-            <div class="panel-head">
-              <div>
-                <h2>운영 분석 · Funnel / Calendar</h2>
-                <div class="desc">업무 흐름과 일정 혼잡도</div>
-              </div>
-            </div>
-            <div class="analysis-grid">
-              <div class="micro-card">
-                <h3>업무 처리 Funnel <span>병목: 검토</span></h3>
-                <div class="funnel-row"><span>생성</span><div class="funnel-bar"><i style="width:100%"></i></div><b id="funnelCreated">48</b></div>
-                <div class="funnel-row"><span>진행</span><div class="funnel-bar"><i id="funnelProgress" style="width:70%"></i></div><b id="funnelProgressNum">34</b></div>
-                <div class="funnel-row"><span>검토</span><div class="funnel-bar"><i style="width:38%;background:linear-gradient(90deg,var(--yellow),var(--red))"></i></div><b>18</b></div>
-                <div class="funnel-row"><span>완료</span><div class="funnel-bar"><i id="funnelDone" style="width:31%;background:linear-gradient(90deg,var(--green),var(--cyan))"></i></div><b id="funnelDoneNum">15</b></div>
-                <div class="insight-text">검토 단계 전환율 52.9% → QA 검토자 추가 배정 필요</div>
-              </div>
-
-              <div class="micro-card">
-                <h3>일정 밀도 <span>충돌 1건</span></h3>
-                <div class="calendar-density">
-                  <div class="density-chip low"><b>09</b><span>여유 34%</span></div>
-                  <div class="density-chip mid"><b>10</b><span>보통 62%</span></div>
-                  <div class="density-chip low"><b>11</b><span>여유 45%</span></div>
-                  <div class="density-chip high"><b>14</b><span>충돌 92%</span></div>
-                  <div class="density-chip mid"><b>16</b><span>혼잡 71%</span></div>
-                </div>
-                <div class="insight-text"><b>14:00 충돌</b> · PM 회의와 QA 리뷰가 겹쳐 QA 리뷰 분산 권장</div>
-              </div>
-            </div>
-          </article>
-
-          <!-- 업무 SNS Hub -->
-          <article class="panel comm-panel">
-            <div class="panel-head">
-              <div>
-                <h2>업무 SNS Hub</h2>
-                <div class="desc">팀 채팅 · 공지 피드 · 바로 조치할 업무를 한 화면에 요약</div>
-              </div>
-              <button class="mini-btn" onclick="addFeed('관리자 공지','새 공지가 업무 피드에 등록되었습니다.',['#공지','#공유'])">+ 공지</button>
-            </div>
-            <div class="comm-split">
-              <div class="comm-box">
-                <div class="comm-box-title"><b>팀 채팅</b><div class="hub-tabs" id="chatTabs"><button class="hub-tab active" onclick="setChatView('today')">오늘</button><button class="hub-tab" onclick="setChatView('week')">이번주</button><button class="hub-tab" onclick="setChatView('all')">전체기록</button></div></div>
-                <div class="comm-scroll" id="chatList"></div>
-                <div class="chat-input">
-                  <input id="chatInput" placeholder="업무 메시지 입력" onkeydown="if(event.key==='Enter')sendChat()" />
-                  <button onclick="sendChat()">전송</button>
-                </div>
-              </div>
-              <div class="comm-box">
-                <div class="comm-box-title"><b>업무 피드</b><div class="hub-tabs" id="feedTabs"><button class="hub-tab active" onclick="setFeedView('today')">오늘</button><button class="hub-tab" onclick="setFeedView('week')">이번주</button><button class="hub-tab" onclick="setFeedView('all')">전체기록</button></div></div>
-                <div class="comm-scroll" id="feedList"></div>
-              </div>
-              <div class="comm-box hub-summary">
-                <div class="comm-box-title"><b>Hub 요약</b><span>오늘</span></div>
-                <div class="hub-metric-grid">
-                  <div class="hub-metric"><strong>3</strong><span>새 대화</span></div>
-                  <div class="hub-metric"><strong>2</strong><span>긴급 공지</span></div>
-                  <div class="hub-metric"><strong>1</strong><span>승인 요청</span></div>
-                  <div class="hub-metric"><strong>17:00</strong><span>결산 마감</span></div>
-                </div>
-                <div class="hub-action-list">
-                  <div class="hub-action"><b>즉시 확인</b> QA 기준표 업데이트 · 검토자 배정 필요</div>
-                  <div class="hub-action"><b>공유 예정</b> 보안 패치 재기동 시간 팀 공지</div>
-                  <div class="hub-action"><b>자동화</b> 일일 결산 작성 후 Gmail 발송 대기</div>
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <!-- 배포 상태/반영 체크 -->
-          <article class="panel status-panel">
-            <div class="panel-head">
-              <div>
-                <h2>온라인 상태 · 반영 체크</h2>
-                <div class="desc">요구사항 반영 여부를 즉시 확인</div>
-              </div>
-              <button class="mini-btn" onclick="toast('모든 상태 점검 완료')">Check</button>
-            </div>
-            <div class="status-list">
-              <div class="deploy-grid">
-                <div class="deploy-card"><strong>GitHub</strong><span>Connected</span></div>
-                <div class="deploy-card"><strong>Railway</strong><span>Online Ready</span></div>
-                <div class="deploy-card"><strong>Google</strong><span>OAuth Ready</span></div>
-                <div class="deploy-card"><strong>Gmail</strong><span>API Ready</span></div>
-              </div>
-              <div class="check-list" id="checkList"></div>
-            </div>
-          </article>
-
-          <!-- AI 인사이트 -->
-          <article class="panel ai-panel">
-            <div class="panel-head">
-              <div>
-                <h2>AI Ops Assistant · 추천 조치</h2>
-                <div class="desc">관리자/사원 권한별 해석</div>
-              </div>
-              <button class="mini-btn" onclick="toast('AI 인사이트 갱신 완료')">Refresh</button>
-            </div>
-            <div class="ai-grid" id="aiGrid"></div>
-          </article>
-
-          <!-- 히트맵 -->
-          <article class="panel heatmap-panel">
-            <div class="panel-head">
-              <div>
-                <h2>팀원별 Workload Heatmap</h2>
-                <div class="desc" id="heatmapDesc">관리자는 팀원별 부하를 전체 확인</div>
-              </div>
-            </div>
-            <div class="heatmap-wrap" id="heatmap"></div>
-          </article>
-
-          <!-- 포스트잇 -->
-          <article class="panel notes-panel">
-            <div class="panel-head">
-              <div>
-                <h2>포스트잇 메모</h2>
-                <div class="desc">3개 메모 localStorage 저장</div>
-              </div>
-            </div>
-            <div class="notes-grid">
-              <textarea class="note" oninput="saveNotes()">17:00 결산 리포트 확인</textarea>
-              <textarea class="note" oninput="saveNotes()">보안 패치 완료 후 공지</textarea>
-              <textarea class="note" oninput="saveNotes()">QA 리뷰 일정 재조정</textarea>
-            </div>
-          </article>
-        </section>
-
-        <!-- ── 결산 분석 ── -->
-        <section class="analytics">
-          <div class="chart-card">
-            <h3>일일 결산 <span id="dailyScope">팀 기준</span></h3>
-            <div class="donut-wrap">
-              <div class="donut" id="dailyDonut"><b id="dailyPercent">72%</b></div>
-              <div class="legend-list">
-                <div><span>완료</span><b id="dailyDone">15</b></div>
-                <div><span>미완료</span><b id="dailyTodo">3</b></div>
-                <div><span>지연</span><b id="dailyLate">2</b></div>
-                <div><span>평균 처리</span><b>5.2h</b></div>
-              </div>
-            </div>
-            <div class="chart-foot"><b>해석:</b> 완료율과 SLA 위험을 함께 봐야 함</div>
-          </div>
-
-          <div class="chart-card">
-            <h3>주간 결산 <span>요일별 완료 추이</span></h3>
-            <div class="line-chart">
-              <svg viewBox="0 0 220 90" preserveAspectRatio="none">
-                <polyline fill="none" stroke="rgba(64,224,208,.95)" stroke-width="3" points="8,70 42,64 76,52 110,57 144,36 178,27 212,20"/>
-                <polyline fill="rgba(64,224,208,.13)" stroke="none" points="8,70 42,64 76,52 110,57 144,36 178,27 212,20 212,90 8,90"/>
-                <circle cx="8" cy="70" r="3" fill="#40e0d0"/><circle cx="42" cy="64" r="3" fill="#40e0d0"/><circle cx="76" cy="52" r="3" fill="#40e0d0"/><circle cx="110" cy="57" r="3" fill="#40e0d0"/><circle cx="144" cy="36" r="3" fill="#40e0d0"/><circle cx="178" cy="27" r="3" fill="#40e0d0"/><circle cx="212" cy="20" r="3" fill="#40e0d0"/>
-                <text x="8" y="86">월</text><text x="42" y="86">화</text><text x="76" y="86">수</text><text x="110" y="86">목</text><text x="144" y="86">금</text><text x="178" y="86">토</text><text x="208" y="86">일</text>
-              </svg>
-            </div>
-            <div class="chart-foot"><b>금요일 처리량 급증</b> · 주중 검토 병목 해소</div>
-          </div>
-
-          <div class="chart-card">
-            <h3>월간 결산 <span>유형별 상태</span></h3>
-            <div class="stack-list">
-              <div class="stack-row"><span>문서</span><div class="stackbar"><span class="seg done" style="width:62%"></span><span class="seg progress" style="width:28%"></span><span class="seg delay" style="width:10%"></span></div><b>90</b></div>
-              <div class="stack-row"><span>QA</span><div class="stackbar"><span class="seg done" style="width:48%"></span><span class="seg progress" style="width:32%"></span><span class="seg delay" style="width:20%"></span></div><b>52</b></div>
-              <div class="stack-row"><span>보안</span><div class="stackbar"><span class="seg done" style="width:45%"></span><span class="seg progress" style="width:25%"></span><span class="seg delay" style="width:30%"></span></div><b>31</b></div>
-              <div class="stack-row"><span>정산</span><div class="stackbar"><span class="seg done" style="width:70%"></span><span class="seg progress" style="width:20%"></span><span class="seg delay" style="width:10%"></span></div><b>44</b></div>
-            </div>
-            <div class="chart-foot"><b>보안 지연 30%</b> · workload와 연결</div>
-          </div>
-
-          <div class="chart-card">
-            <h3>분기 병목 TOP5 <span>지연/승인대기 건수</span></h3>
-            <div class="bottleneck-list">
-              <div class="bottleneck-row high"><span>QA 승인 지연</span><div class="bottleneck-bar"><i style="width:100%"></i></div><b>12건</b></div>
-              <div class="bottleneck-row high"><span>보안 패치 SLA 초과</span><div class="bottleneck-bar"><i style="width:72%"></i></div><b>8건</b></div>
-              <div class="bottleneck-row mid"><span>ERP 검토 병목</span><div class="bottleneck-bar"><i style="width:55%"></i></div><b>6건</b></div>
-              <div class="bottleneck-row mid"><span>회의 일정 충돌</span><div class="bottleneck-bar"><i style="width:45%"></i></div><b>5건</b></div>
-              <div class="bottleneck-row low"><span>외주 승인 대기</span><div class="bottleneck-bar"><i style="width:36%"></i></div><b>4건</b></div>
-            </div>
-            <div class="chart-foot"><b>우선 조치:</b> QA 검토자 추가 배정 → 보안 SLA 재조정</div>
-          </div>
-
-          <div class="chart-card">
-            <h3>연간 결산 <span>기여도 + 과부하</span></h3>
-            <div class="rank-list">
-              <div class="rank-row"><span>김민지</span><div class="rank-bar"><i style="width:92%"></i></div><b>21</b></div>
-              <div class="rank-row"><span>이준호</span><div class="rank-bar"><i style="width:86%"></i></div><b>19</b></div>
-              <div class="rank-row"><span>한서윤</span><div class="rank-bar"><i style="width:73%"></i></div><b>16</b></div>
-              <div class="rank-row"><span>박서연</span><div class="rank-bar"><i style="width:64%"></i></div><b>14</b></div>
-              <div class="rank-row"><span>오세훈</span><div class="rank-bar"><i style="width:58%"></i></div><b>12</b></div>
-            </div>
-            <div class="chart-foot">성과 높음 ≠ 적정 배분 · 상위 2명 과부하 주의</div>
-          </div>
-        </section>
-
-        <!-- 푸터 -->
-        <footer>
-          <div>Integrated Cloud Services Active · Secure Auth · Mail Automation · Activity Archive Live</div>
-          <div class="footer-actions">
-            <button class="pill green" onclick="sendReport()">일일 결산 Gmail 발송</button>
-            <button class="pill" onclick="toast('모든 기능 온라인 활성화 상태를 확인했습니다.')">기능 활성화 확인</button>
-          </div>
-        </footer>
-      </main>
-    </div>
-  </div>
-
-  <!-- ── 업무 추가 모달 ── -->
-  <div class="modal" id="taskModal">
-    <div class="modal-box">
-      <h2>관리자 업무 추가</h2>
-      <p>담당자, 우선순위, 진행률을 지정하면 KPI와 업무 보드가 자동 갱신됩니다.</p>
-      <div class="modal-grid">
-        <div class="modal-field full">
-          <label>업무명</label>
-          <input id="newTaskTitle" value="신규 업무를 입력하세요" />
-        </div>
-        <div class="modal-field">
-          <label>담당자</label>
-          <select id="newTaskOwner">
-            <option>김민지</option>
-            <option>이준호</option>
-            <option>한서윤</option>
-            <option>박서연</option>
-            <option>오세훈</option>
-          </select>
-        </div>
-        <div class="modal-field">
-          <label>우선순위</label>
-          <select id="newTaskPriority">
-            <option value="HIGH">HIGH</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="LOW">LOW</option>
-          </select>
-        </div>
-        <div class="modal-field">
-          <label>프로젝트</label>
-          <select id="newTaskProject">
-            <option>보안 취약점 대응</option>
-            <option>ERP 전사 고도화</option>
-            <option>AI 문서 자동화</option>
-            <option>신규 모바일 앱 런칭</option>
-            <option>정산 프로세스 개선</option>
-          </select>
-        </div>
-        <div class="modal-field">
-          <label>진행률</label>
-          <select id="newTaskProgress">
-            <option value="0">0%</option>
-            <option value="25">25%</option>
-            <option value="50">50%</option>
-            <option value="75">75%</option>
-            <option value="100">100%</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="primary-btn" onclick="createTaskFromModal()">업무 추가</button>
-        <button class="secondary-btn" onclick="closeTaskModal()">취소</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-  <script>
-    // ───────────────── 데이터 ─────────────────
-    let currentRole = "admin";
-    let selectedRole = "admin";
-
-    const projects = [
-      ["업무 자동화 대시보드","PM 김민지 · 예산 0.5억 · D-26",72],
-      ["ERP 전사 고도화","PM 오세훈 · 예산 4.2억 · D-133",39],
-      ["AI 문서 자동화","PM 한서윤 · 예산 2.6억 · D-86",58],
-      ["보안 취약점 대응","PM 이준호 · 예산 0.9억 · D-8",81]
-    ];
-
-    const defaultTasks = [
-      {title:"긴급 보안 패치 적용 및 시스템 재기동", owner:"이준호", project:"보안 취약점 대응", level:"HIGH", progress:15, done:false},
-      {title:"QA 테스트 결과 검토 및 오류 분류 기준 확정", owner:"김민지", project:"ERP 전사 고도화", level:"HIGH", progress:45, done:false},
-      {title:"주간 업무 요약 리포트 자동화 테스트", owner:"한서윤", project:"AI 문서 자동화", level:"MEDIUM", progress:100, done:true},
-      {title:"외주 용역 산출물 검수 및 대금 지급", owner:"박서연", project:"정산 프로세스 개선", level:"MEDIUM", progress:55, done:false},
-      {title:"신규 모바일 앱 런칭 사전 점검", owner:"오세훈", project:"신규 모바일 앱 런칭", level:"LOW", progress:35, done:false}
-    ];
-
-    let tasks = JSON.parse(localStorage.getItem("finalDashTasks") || "null") || defaultTasks;
-
-    let chatView = "today";
-    let feedView = "today";
-
-    function buildChatLogs(){
-      const today = [
-        {type:"date", label:"2026.05.27 수요일"},
-        {from:"김민지", time:"09:12", text:"QA 기준표 최종본 올라왔어요. 배포 전 체크리스트만 확인 부탁드립니다.", team:"QA"},
-        {from:"이준호", time:"09:14", text:"VPN 인증 서버 에러율 올라가고 있습니다. 인프라팀 확인 중입니다.", team:"보안"},
-        {from:"박서연", time:"09:26", text:"외주 정산 승인 2건 아직 남아있어요. 담당자 확인 가능할까요?", team:"재무"},
-        {from:"나", time:"09:31", text:"QA 승인 끝나면 바로 결산 리포트 자동 발송 테스트 돌릴게요.", team:"PM", me:true, read:"읽음 3"},
-        {from:"오세훈", time:"10:03", text:"14시 PM 회의 자료 업로드 완료했습니다.", team:"PM"}
-      ];
-      const names=[['김민지','QA'],['이준호','보안'],['한서윤','AI'],['박서연','재무'],['오세훈','PM']];
-      const texts=["승인 대기 건 확인 부탁드립니다.","로그 모니터링 중입니다.","자동화 테스트 결과 공유드립니다.","정산 승인 상태 업데이트했습니다.","회의 자료 올렸습니다.","일정 변경 확인 부탁드립니다."];
-      const week=[];
-      const all=[];
-      let day=1;
-      for(let i=0;i<50;i++){
-        if(i%7===0){ week.push({type:'date',label:`2026.05.${20+day} 기록`}); day++; }
-        const n=names[i%names.length];
-        week.push({from:n[0], time:`${String(9+(i%9)).padStart(2,'0')}:${String((i*7)%60).padStart(2,'0')}`, text:texts[i%texts.length], team:n[1], me:n[0]==='나'});
-      }
-      day=1;
-      for(let i=0;i<200;i++){
-        if(i%10===0){ all.push({type:'date',label:`2026.05.${String((i/10)+1).padStart(2,'0')} 아카이브`}); }
-        const n=names[i%names.length];
-        all.push({from:n[0], time:`${String(8+(i%10)).padStart(2,'0')}:${String((i*11)%60).padStart(2,'0')}`, text:`${texts[i%texts.length]} (#${i+1})`, team:n[1], me:false});
-      }
-      return {today, week, all};
-    }
-
-    function buildFeedLogs(){
-      const today=[
-        {type:"관리자 공지", time:"09:00", text:"오늘 17:00까지 일일 결산 리포트 제출 바랍니다. 미제출 팀 자동 알림 발송.", tags:["#결산","#공지"]},
-        {type:"QA 공유", time:"10:18", text:"테스트 케이스 v2.3 기준표 업로드 완료. 신규 배포 전 확인 필수", tags:["#QA","#배포"]},
-        {type:"보안팀 공지", time:"10:22", text:"VPN 인증 서버 간헐 장애 감지. 접속 불안정 가능", tags:["#긴급","#보안"]},
-        {type:"PM 업데이트", time:"11:05", text:"ERP 고도화 프로젝트 QA 검토 회의 16:30으로 조정", tags:["#PM","#일정"]},
-        {type:"재무팀 공지", time:"11:42", text:"외주 정산 승인 마감 D-1", tags:["#재무","#승인"]},
-        {type:"인사팀 공지", time:"13:20", text:"재택근무 신청 마감 14:00", tags:["#인사","#재택"]}
-      ];
-      const types=['관리자 공지','QA 공유','보안팀 공지','PM 업데이트','재무팀 공지','인사팀 공지'];
-      const msgs=['업무 기준 업데이트','검토 병목 발생','시스템 점검 예정','일정 변경 안내','승인 마감 안내','근무 정책 안내'];
-      const week=[]; const all=[];
-      for(let i=0;i<50;i++) week.push({type:types[i%types.length], time:`05.${25+(i%7)} ${String(9+(i%8)).padStart(2,'0')}:00`, text:`${msgs[i%msgs.length]} (#${i+1})`, tags:['#업무','#기록']});
-      for(let i=0;i<200;i++) all.push({type:types[i%types.length], time:`04.${String(1+(i%30)).padStart(2,'0')} ${String(8+(i%10)).padStart(2,'0')}:30`, text:`아카이브 공지 내역 ${i+1}`, tags:['#archive','#history']});
-      return {today, week, all};
-    }
-
-    const chatLogs = buildChatLogs();
-    const feedLogs = buildFeedLogs();
-
-    const chats = chatLogs.today;
-    const feeds = feedLogs.today.map(f => ({from:`${f.type} · ${f.time}`, text:f.text, tags:f.tags}));
-
-    const staffCompanyTasks = [
-      {title:"VIP 고객 결제 오류 문의 1차 답변", meta:"Instagram · 13:30 마감 · 진행률 60%", level:"HIGH", done:false},
-      {title:"배송 지연 불만 고객 escalation 정리", meta:"Kakao · 14:20 마감 · 진행률 35%", level:"HIGH", done:false},
-      {title:"SNS DM 신규 문의 7건 빠른 응대", meta:"Instagram · 오늘 처리 · 진행률 40%", level:"MEDIUM", done:false},
-      {title:"일일 고객 응대 리포트 작성", meta:"Gmail 자동 발송 전 검토 · 17:00", level:"REPORT", done:false}
-    ];
-
-    let personalTodos = JSON.parse(localStorage.getItem("staffPersonalTodos") || "null") || [
-      {text:"교수님 메일 보내기", done:false},
-      {text:"발표 자료 수정", done:false},
-      {text:"장학금 서류 확인", done:false}
-    ];
-
-    const adminAnalysisHTML = document.querySelector(".analysis-grid").innerHTML;
-    const adminAnalyticsHTML = document.querySelector(".analytics").innerHTML;
-
-    
-    const checklist = [
-      ["로그인 화면 실제 서비스화","로그인 페이지"],
-      ["관리자/사원 권한 구분","role 기반 화면"],
-      ["Google 로그인 통합 옵션","로그인 버튼"],
-      ["업무 추가 모달","관리자 전용"],
-      ["담당자/우선순위/진행률 선택","모달 필드"],
-      ["KPI 자동 갱신","업무 완료/추가 시"],
-      ["채팅 + 업무 피드 분리","커뮤니케이션 패널"],
-      ["포스트잇 3개","우측 하단"],
-      ["결산 분석 카드 개선","하단 분석"],
-      ["Railway/GitHub/Google/Gmail 상태","상태 패널"]
-    ];
-
-    // ───────────────── 로그인 ─────────────────
-    function selectRole(role){
-      selectedRole = role;
-      document.getElementById("roleAdmin").classList.toggle("active", role === "admin");
-      document.getElementById("roleStaff").classList.toggle("active", role === "staff");
-      document.getElementById("loginId").value = role === "admin" ? "admin" : "staff";
-      document.getElementById("loginPw").value = "1234";
-    }
-
-    function fillDemo(){
-      selectRole(selectedRole);
-      toast("데모 계정이 입력되었습니다.");
-    }
-
-    function loginWithAccount(){
-      const id = document.getElementById("loginId").value.trim();
-      const pw = document.getElementById("loginPw").value.trim();
-      if((selectedRole === "admin" && id === "admin" && pw === "1234") ||
-         (selectedRole === "staff" && id === "staff" && pw === "1234")){
-        enterDashboard(selectedRole);
-      }else{
-        toast("계정 정보를 확인하세요. admin/1234 또는 staff/1234");
-      }
-    }
-
-    function googleLogin(){
-      enterDashboard(selectedRole);
-      toast("Google OAuth 데모 로그인 완료 · 선택한 권한으로 진입");
-    }
-
-    function enterDashboard(role){
-      currentRole = role;
-      document.getElementById("loginPage").style.display = "none";
-      document.getElementById("dashboard").classList.add("show");
-      applyRole();
-      renderAll();
-      toast(role === "admin" ? "관리자 대시보드로 접속했습니다." : "사원 대시보드로 접속했습니다.");
-    }
-
-    function logout(){
-      document.getElementById("dashboard").classList.remove("show");
-      document.getElementById("loginPage").style.display = "grid";
-      toast("로그아웃되었습니다.");
-    }
-
-    // ───────────────── 권한별 화면 ─────────────────
-    function applyRole(){
-      const isAdmin = currentRole === "admin";
-      const dashboard = document.getElementById("dashboard");
-      dashboard.classList.toggle("staff-mode", !isAdmin);
-      dashboard.classList.toggle("admin-mode", isAdmin);
-
-      document.getElementById("roleBadge").textContent = isAdmin ? "관리자" : "사원";
-      document.querySelector(".title h1").textContent = isAdmin ? "Workflow OS · Operations Command Center" : "Customer Success Workspace";
-      document.getElementById("roleText").textContent = isAdmin
-        ? "관리자 모드 · 업무 배정 / 팀 관제 / 결산 분석"
-        : "사원 모드 · 고객 문의 응대 / SNS 인박스 / 개인 To-do / 응답 SLA";
-      document.getElementById("taskPanelTitle").textContent = isAdmin ? "팀 업무 분장 · To-do" : "오늘 내 업무 체크리스트";
-      document.getElementById("taskPanelDesc").textContent = isAdmin
-        ? "관리자: 업무 추가/수정/담당자 지정 가능"
-        : "사원: 내 담당 업무 + 고객 문의 응대 현황 빠르게 확인";
-      document.getElementById("addTodoBtn").style.display = isAdmin ? "inline-block" : "none";
-      document.getElementById("heatmapDesc").textContent = isAdmin ? "일간 기준 · 행=팀원 / 열=시간대 / 숫자=부하율" : "신규 문의 → 처리 중 → SLA 임박 → 해결 완료";
-      document.getElementById("dailyScope").textContent = isAdmin ? "팀 기준" : "개인 기준";
-
-      const projectTitle = document.querySelector(".project-panel h2");
-      const projectDesc = document.querySelector(".project-panel .desc");
-      const projectBtn = document.querySelector(".project-panel .mini-btn");
-      projectTitle.textContent = isAdmin ? "프로젝트 운영 관제" : "나의 오늘 근무 보드";
-      projectDesc.textContent = isAdmin ? "PM / 예산 / D-day / 진행률" : "출근 상태 · 오늘 루틴 · 개인 마감";
-      projectBtn.textContent = isAdmin ? "Sync" : "상태 저장";
-
-      const analysisTitle = document.querySelector(".analysis-panel h2");
-      const analysisDesc = document.querySelector(".analysis-panel .desc");
-      analysisTitle.textContent = isAdmin ? "운영 분석 · Funnel / Calendar" : "개인 생산성 · 집중 시간";
-      analysisDesc.textContent = isAdmin ? "업무 흐름과 일정 혼잡도" : "내 업무 처리 흐름과 오늘 일정 혼잡도";
-
-      const commDesc = document.querySelector(".comm-panel .desc");
-      commDesc.textContent = isAdmin ? "실시간 팀 커뮤니케이션 · 공지 아카이브" : "내 멘션 · 고객 escalation · 응대 알림 중심으로 요약";
-    }
-
-    // ───────────────── 렌더링 ─────────────────
-    function renderAll(){
-      renderTasks();
-      renderProjects();
-      renderAnalysis();
-      renderComm();
-      renderStatus();
-      renderAI();
-      renderHeatmap();
-      renderAnalytics();
-      loadNotes();
-      updateKpis();
-    }
-
-    function visibleTasks(){
-      if(currentRole === "admin") return tasks;
-      return tasks.filter(t => t.owner === "한서윤" || t.done);
-    }
-
-    function renderTasks(){
-      const list = document.getElementById("todoList");
-
-      if(currentRole !== "admin"){
-        const companyHtml = staffCompanyTasks.map((t,i)=>{
-          const chipClass = t.level === "HIGH" ? "" : t.level === "MEDIUM" ? "mid" : "low";
-          return `
-            <div class="staff-work-item">
-              <input type="checkbox" ${t.done ? "checked" : ""} onchange="toggleStaffCompanyTask(${i})">
-              <div>
-                <div class="staff-work-title">${t.title}</div>
-                <div class="staff-work-meta">${t.meta}</div>
-              </div>
-              <span class="chip ${chipClass}">${t.level}</span>
-            </div>`;
-        }).join("");
-
-        const personalHtml = personalTodos.map((t,i)=>`
-          <div class="personal-item ${t.done ? "done" : ""}">
-            <input type="checkbox" ${t.done ? "checked" : ""} onchange="togglePersonalTodo(${i})">
-            <span>${t.text}</span>
-            <button onclick="deletePersonalTodo(${i})">×</button>
-          </div>`).join("");
-
-        list.innerHTML = `
-          <div class="staff-company-box">
-            <div class="staff-section-title">회사 업무 체크리스트 <span>고객 응대 / 마감 / 진행률</span></div>
-            <div class="staff-work-scroll">${companyHtml}</div>
-          </div>
-          <div class="personal-todo-box">
-            <div class="staff-section-title">개인 To-do <span>업무 체크리스트와 분리 저장</span></div>
-            <div class="personal-add-row">
-              <input id="personalTodoInput" placeholder="개인 To-do 입력" onkeydown="if(event.key==='Enter')addPersonalTodo()">
-              <button onclick="addPersonalTodo()">+</button>
-            </div>
-            <div class="personal-list">${personalHtml}</div>
-          </div>`;
-        return;
-      }
-
-      const data = visibleTasks();
-      list.innerHTML = data.map((t)=>{
-        const i = tasks.indexOf(t);
-        const chipClass = t.level === "HIGH" ? "" : t.level === "MEDIUM" ? "mid" : "low";
-        return `
-          <div class="todo">
-            <input type="checkbox" ${t.done ? "checked" : ""} onchange="toggleTask(${i})">
-            <div>
-              <input class="todo-title" value="${t.title}" onchange="editTask(${i}, this.value)">
-              <div class="todo-meta">${t.owner} · ${t.project} · 진행률 ${t.progress}%</div>
-            </div>
-            <span class="chip ${chipClass}">${t.level}</span>
-          </div>`;
-      }).join("");
-      localStorage.setItem("finalDashTasks", JSON.stringify(tasks));
-    }
-
-    function renderProjects(){
-      const isAdmin = currentRole === "admin";
-      const list = document.getElementById("projectList");
-      if(isAdmin){
-        list.innerHTML = projects.map(p => `
-          <div class="project">
-            <div class="project-top"><h3>${p[0]}</h3><span class="chip ${p[2] > 75 ? '' : 'mid'}">${p[2]}%</span></div>
-            <p>${p[1]}</p>
-            <div class="bar"><div class="fill" style="width:${p[2]}%"></div></div>
-          </div>
-        `).join("");
-        return;
-      }
-
-      list.innerHTML = `
-        <div class="staff-today-card">
-          <div class="staff-profile-line">
-            <div><b>한서윤 · 고객 커뮤니케이션 / AI 문서 자동화팀</b><span>오늘 근무: 하이브리드 · 고객 문의 응대 + 내부 QA 지원</span></div>
-            <span class="chip info">SNS Desk</span>
-          </div>
-          <div class="staff-focus-list">
-            <div class="staff-focus"><strong>12</strong><span>신규 문의 대기</span></div>
-            <div class="staff-focus"><strong>3</strong><span>우선 응대 대상</span></div>
-            <div class="staff-focus"><strong>89%</strong><span>응답 SLA 준수</span></div>
-            <div class="staff-focus"><strong>17:00</strong><span>일일 운영 리포트 마감</span></div>
-          </div>
-          <div class="staff-routine">
-            <div class="routine-item"><b>10:00</b><div>VIP 고객 문의 응대<span>결제 오류 / 1시간 내 응답</span></div><span class="chip">HIGH</span></div>
-            <div class="routine-item"><b>13:30</b><div>인스타그램 DM 문의 정리<span>신규 문의 7건</span></div><span class="chip purple">SNS</span></div>
-            <div class="routine-item"><b>16:30</b><div>일일 응대 리포트 작성<span>Google Mail 자동 발송 전 검토</span></div><span class="chip low">REPORT</span></div>
-          </div>
-          <div class="staff-focus-check-grid">
-            <div class="staff-timer-card">
-              <div class="staff-mini-label">Focus Timer</div>
-              <div class="staff-timer-time">25:00</div>
-              <div class="staff-mini-desc">VIP 환불 문의 집중 처리 세션</div>
-            </div>
-            <div class="staff-close-card">
-              <div class="staff-mini-label warn">퇴근 전 체크리스트</div>
-              <div class="staff-close-list">☐ 미응답 DM 0건 확인<br>☐ 일일 응대 리포트 제출<br>☐ 긴급 문의 인수인계 완료</div>
-            </div>
-          </div>
-          <div class="staff-privacy-note">실제 고객 커뮤니케이션 담당자의 실행형 워크스페이스처럼 개인 업무 처리와 고객 응대 흐름 중심으로 구성됩니다.</div>
-        </div>`;
-    }
-
-    function setActiveTabs(groupId, value){
-      const tabs = document.querySelectorAll(`#${groupId} .hub-tab`);
-      tabs.forEach(btn => btn.classList.remove("active"));
-      const map = {today:0, week:1, all:2};
-      if(tabs[map[value]]) tabs[map[value]].classList.add("active");
-    }
-
-    function setChatView(view){
-      chatView = view;
-      setActiveTabs("chatTabs", view);
-      renderComm();
-    }
-
-    function setFeedView(view){
-      feedView = view;
-      setActiveTabs("feedTabs", view);
-      renderComm();
-    }
-
-    
-
-    function renderAnalysis(){
-      const isAdmin = currentRole === "admin";
-      const grid = document.querySelector(".analysis-grid");
-      if(isAdmin){
-        grid.innerHTML = adminAnalysisHTML;
-        return;
-      }
-      grid.innerHTML = `
-        <div class="micro-card" style="grid-row:1 / -1;">
-          <h3>SNS Inbox <span>고객명 · 채널 · 상태</span></h3>
-          <div class="sns-inbox">
-            <div class="sns-row"><b>김OO</b><span>Instagram</span><div>결제 오류 문의</div><span class="status-normal">답변 대기</span></div>
-            <div class="sns-row"><b>박OO</b><span>Email</span><div>기업 고객 환불 요청</div><span class="status-vip">VIP</span></div>
-            <div class="sns-row"><b>이OO</b><span>Kakao</span><div>배송 지연 불만</div><span class="status-warn">불만</span></div>
-            <div class="sns-row"><b>최OO</b><span>X</span><div>공개 댓글 이슈</div><span class="status-warn">Escalation</span></div>
-            <div class="sns-row"><b>정OO</b><span>WebChat</span><div>로그인 오류 해결</div><span class="status-done">완료</span></div>
-            <div class="sns-row"><b>윤OO</b><span>Instagram</span><div>이벤트 참여 문의</div><span class="status-normal">일반</span></div>
-          </div>
-        </div>`;
-    }
-
-    function renderAnalytics(){
-      const isAdmin = currentRole === "admin";
-      const area = document.querySelector(".analytics");
-      if(isAdmin){
-        area.innerHTML = adminAnalyticsHTML;
-        return;
-      }
-      area.innerHTML = `
-        <div class="chart-card">
-          <h3>오늘 응대한 문의 수 <span>개인 기준</span></h3>
-          <div class="donut-wrap">
-            <div class="donut" style="--donut:89%"><b>18</b></div>
-            <div class="legend-list">
-              <div><span>해결 완료</span><b>18</b></div>
-              <div><span>처리 중</span><b>7</b></div>
-              <div><span>SLA 임박</span><b>2</b></div>
-              <div><span>VIP</span><b>1</b></div>
-            </div>
-          </div>
-          <div class="chart-foot"><b>해석:</b> 신규 문의보다 해결 속도가 빠른 상태</div>
-        </div>
-        <div class="chart-card">
-          <h3>평균 응답시간 <span>목표 15분</span></h3>
-          <div class="line-chart">
-            <svg viewBox="0 0 220 90" preserveAspectRatio="none">
-              <polyline fill="none" stroke="rgba(64,224,208,.95)" stroke-width="3" points="8,62 42,58 76,47 110,52 144,36 178,28 212,24"/>
-              <polyline fill="rgba(64,224,208,.13)" stroke="none" points="8,62 42,58 76,47 110,52 144,36 178,28 212,24 212,90 8,90"/>
-              <text x="8" y="86">09</text><text x="42" y="86">10</text><text x="76" y="86">11</text><text x="110" y="86">13</text><text x="144" y="86">15</text><text x="178" y="86">16</text><text x="208" y="86">17</text>
-            </svg>
-          </div>
-          <div class="chart-foot"><b>12분</b> · 목표보다 3분 빠름</div>
-        </div>
-        <div class="chart-card">
-          <h3>고객 만족도 <span>CSAT</span></h3>
-          <div class="donut-wrap">
-            <div class="donut" style="--donut:94%"><b>94%</b></div>
-            <div class="legend-list">
-              <div><span>만족</span><b>31</b></div>
-              <div><span>보통</span><b>3</b></div>
-              <div><span>불만</span><b>2</b></div>
-              <div><span>리뷰 필요</span><b>1</b></div>
-            </div>
-          </div>
-          <div class="chart-foot">불만 2건은 배송 지연/환불 이슈</div>
-        </div>
-        <div class="chart-card">
-          <h3>해결률 <span>문의 처리 상태</span></h3>
-          <div class="stack-list">
-            <div class="stack-row"><span>DM</span><div class="stackbar"><span class="seg done" style="width:78%"></span><span class="seg progress" style="width:16%"></span><span class="seg delay" style="width:6%"></span></div><b>23</b></div>
-            <div class="stack-row"><span>Email</span><div class="stackbar"><span class="seg done" style="width:64%"></span><span class="seg progress" style="width:24%"></span><span class="seg delay" style="width:12%"></span></div><b>11</b></div>
-            <div class="stack-row"><span>Kakao</span><div class="stackbar"><span class="seg done" style="width:58%"></span><span class="seg progress" style="width:20%"></span><span class="seg delay" style="width:22%"></span></div><b>9</b></div>
-            <div class="stack-row"><span>Web</span><div class="stackbar"><span class="seg done" style="width:86%"></span><span class="seg progress" style="width:10%"></span><span class="seg delay" style="width:4%"></span></div><b>14</b></div>
-          </div>
-          <div class="chart-foot"><b>해결률 89%</b> · Kakao 불만 응대 개선 필요</div>
-        </div>
-        <div class="chart-card">
-          <h3>FAQ TOP Keywords <span>오늘</span></h3>
-          <div class="keyword-cloud">
-            <span>환불</span><span>배송</span><span>로그인</span><span>결제오류</span><span>이벤트</span><span>쿠폰</span><span>세금계산서</span><span>비밀번호</span>
-          </div>
-          <div class="chart-foot">상위 키워드는 FAQ 자동응답 문구 개선에 사용</div>
-        </div>`;
-    }
-
-    function toggleStaffCompanyTask(i){
-      staffCompanyTasks[i].done = !staffCompanyTasks[i].done;
-      renderTasks();
-      updateKpis();
-      toast("회사 업무 체크 상태가 갱신되었습니다.");
-    }
-
-    function togglePersonalTodo(i){
-      personalTodos[i].done = !personalTodos[i].done;
-      localStorage.setItem("staffPersonalTodos", JSON.stringify(personalTodos));
-      renderTasks();
-    }
-
-    function addPersonalTodo(){
-      const input = document.getElementById("personalTodoInput");
-      if(!input || !input.value.trim()) return;
-      personalTodos.unshift({text:input.value.trim(), done:false});
-      localStorage.setItem("staffPersonalTodos", JSON.stringify(personalTodos));
-      input.value = "";
-      renderTasks();
-      toast("개인 To-do가 추가되었습니다.");
-    }
-
-    function deletePersonalTodo(i){
-      personalTodos.splice(i,1);
-      localStorage.setItem("staffPersonalTodos", JSON.stringify(personalTodos));
-      renderTasks();
-      toast("개인 To-do가 삭제되었습니다.");
-    }
-
-function renderComm(){
-      const chatData = chatLogs[chatView] || chatLogs.today;
-      document.getElementById("chatList").innerHTML = chatData.map((m)=>{
-        if(m.type === "date") return `<div class="date-divider">${m.label}</div>`;
-        return `
-          <div class="chat-msg ${m.me ? 'me' : ''}">
-            <b>${m.from}</b>
-            <span>${m.text}<em class="msg-meta">${m.time} ${m.read ? '· ' + m.read : ''} · ${m.team || '전체'}</em></span>
-          </div>`;
-      }).join("");
-
-      const feedData = feedLogs[feedView] || feedLogs.today;
-      document.getElementById("feedList").innerHTML = feedData.map(f=>`
-        <div class="feed-item"><b>${f.type}<span class="feed-time">${f.time}</span></b><span>${f.text}</span>
-          <div class="feed-tags">${f.tags.slice(0,2).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
-        </div>
-      `).join("");
-    }
-
-    function renderStatus(){
-      document.getElementById("checkList").innerHTML = checklist.map(c=>`
-        <div class="check-item">
-          <div class="check-mark">✓</div>
-          <div>${c[0]}<div class="where">${c[1]}</div></div>
-          <span class="chip low">반영</span>
-        </div>
-      `).join("");
-    }
-
-    function renderAI(){
-      const isAdmin = currentRole === "admin";
-      const cards = isAdmin ? [
-        ["QA 병목 예측","검토 단계 대기 업무가 증가했습니다. QA 승인 인력을 1명 추가하는 것이 좋습니다.","추천: 한서윤 → QA 보조 배정"],
-        ["보안 업무 과부하","이준호 업무부하가 92%로 높습니다. 문서화 업무를 분산하세요.","추천: 문서화 → 박서연 이관"],
-        ["자동화 효과","일일 결산 자동작성과 Gmail 발송으로 4.2시간 절감 예상.","추천: 17:00 자동 발송 예약"]
-      ] : [
-        ["AI 답변 초안","VIP 결제 오류 고객에게 표준 응답 템플릿 기반 1차 안내 메시지를 즉시 생성합니다.","권장: 1분 내 1차 응답 발송"],
-        ["고객 감정 분석","배송 지연 문의 고객의 감정 온도가 높습니다. 공개 채널 확산 전 선제 응대가 필요합니다.","감정 상태: 불만 / 긴급도 HIGH"],
-        ["업무 우선순위 추천","SLA 40분 남은 VIP 문의와 공개 댓글 이슈를 일반 DM보다 먼저 처리해야 합니다.","우선 처리: VIP → 공개 이슈 → 일반 문의"],
-        ["관리자 Escalation","환불 승인 권한이 필요한 기업 고객 요청은 관리자 승인 프로세스로 전환하는 것이 안전합니다.","승인 요청: 김민지 PM"]
-      ];
-
-      document.getElementById("aiGrid").innerHTML = cards.map(c=>`
-        <div class="ai-card"><strong>${c[0]}</strong><p>${c[1]}</p><div class="action">${c[2]}</div></div>
-      `).join("");
-    }
-
-    function renderHeatmap(){
-      const panelTitle = document.querySelector(".heatmap-panel h2");
-      const wrap = document.getElementById("heatmap");
-      if(currentRole !== "admin"){
-        panelTitle.textContent = "Customer Response Queue";
-        wrap.className = "customer-queue";
-        wrap.innerHTML = `
-          <div class="queue-col">
-            <div class="queue-title">신규 문의 <span>12건</span></div>
-            <div class="queue-card"><b>Instagram</b>이벤트 참여 방법 문의<div class="q-meta"><span>김OO</span><span>10분 전</span></div></div>
-            <div class="queue-card"><b>Web Chat</b>로그인 인증번호 미수신<div class="q-meta"><span>윤OO</span><span>18분 전</span></div></div>
-            <div class="queue-card"><b>Kakao</b>주문 상태 확인 요청<div class="q-meta"><span>장OO</span><span>21분 전</span></div></div>
-          </div>
-          <div class="queue-col">
-            <div class="queue-title">처리 중 <span>7건</span></div>
-            <div class="queue-card vip"><b>Email · VIP</b>기업 고객 환불 서류 확인<div class="q-meta"><span>박OO</span><span>담당: 나</span></div></div>
-            <div class="queue-card"><b>Instagram DM</b>결제 오류 스크린샷 수집<div class="q-meta"><span>김OO</span><span>진행 60%</span></div></div>
-          </div>
-          <div class="queue-col">
-            <div class="queue-title">SLA 임박 <span>2건</span></div>
-            <div class="queue-card urgent"><b>Kakao · 불만</b>배송 지연 항의 / 보상 문의<div class="q-meta"><span>이OO</span><span>40분 남음</span></div></div>
-            <div class="queue-card urgent"><b>X 공개댓글</b>서비스 장애 불만 확산 가능<div class="q-meta"><span>최OO</span><span>25분 남음</span></div></div>
-          </div>
-          <div class="queue-col">
-            <div class="queue-title">해결 완료 <span>18건</span></div>
-            <div class="queue-card done"><b>Web Chat</b>로그인 오류 해결 안내 완료<div class="q-meta"><span>정OO</span><span>CSAT 5점</span></div></div>
-            <div class="queue-card done"><b>Email</b>세금계산서 재발행 안내<div class="q-meta"><span>문OO</span><span>완료</span></div></div>
-          </div>`;
-        return;
-      }
-
-      panelTitle.textContent = "팀원별 Workload Heatmap";
-      wrap.className = "heatmap-wrap";
-      const adminMap = [
-        ["김민지",[62,78,55,88,74,31]],
-        ["이준호",[75,88,96,92,86,52]],
-        ["한서윤",[38,56,70,72,61,29]],
-        ["박서연",[34,50,61,69,58,22]]
-      ];
-      const times = ["09시","11시","13시","15시","17시","19시"];
-      let html = `<div class="hm-head">일간</div>${times.map(t=>`<div class="hm-head">${t}</div>`).join("")}`;
-      adminMap.forEach(row=>{
-        html += `<div class="hm-label">${row[0]}</div>`;
-        row[1].forEach(v=>{
-          const cls = v >= 90 ? "hm5" : v >= 80 ? "hm4" : v >= 65 ? "hm3" : v >= 45 ? "hm2" : "hm1";
-          html += `<div class="hm-cell ${cls}">${v}</div>`;
-        });
-      });
-      wrap.innerHTML = html;
-    }
-
-    // ───────────────── KPI 자동 갱신 ─────────────────
-    function updateKpis(){
-      const isAdmin = currentRole === "admin";
-      const data = visibleTasks();
-      const total = isAdmin ? data.length : staffCompanyTasks.length;
-      const done = isAdmin ? data.filter(t=>t.done).length : staffCompanyTasks.filter(t=>t.done).length;
-      const late = isAdmin ? data.filter(t=>!t.done && t.level === "HIGH").length : 2;
-      const progress = Math.max(0,total - done);
-      const rate = total ? Math.round(done / total * 100) : 0;
-      const baseTotal = isAdmin ? total + 13 : 12;
-
-      const smalls = document.querySelectorAll(".kpi small");
-      if(isAdmin){
-        smalls[0].textContent = "오늘 업무 상태";
-        smalls[1].textContent = "완료율";
-        smalls[2].textContent = "SLA 위험";
-        smalls[3].textContent = "병목 지점";
-      }else{
-        smalls[0].textContent = "신규 문의";
-        smalls[1].textContent = "오늘 해결";
-        smalls[2].textContent = "SLA 임박";
-        smalls[3].textContent = "고객 감정";
-      }
-
-      document.getElementById("kpiTotal").textContent = baseTotal;
-      document.getElementById("kpiDoneRate").textContent = isAdmin ? rate + "%" : "18";
-      document.getElementById("kpiSla").textContent = isAdmin ? late : "2";
-      document.querySelectorAll(".kpi strong")[3].textContent = isAdmin ? "QA" : "불만";
-      document.getElementById("taskKpiText").innerHTML = isAdmin
-        ? `완료 ${done} · 진행 ${progress} · 지연 ${late}<br/>다음: QA 승인 확인`
-        : `Instagram 7 · Kakao 3 · Email 2<br/>다음: VIP 환불 문의`;
-      document.getElementById("taskRate").textContent = isAdmin ? rate + "%" : "응대";
-      document.getElementById("taskRateBar").style.width = isAdmin ? rate + "%" : "72%";
-
-      const byId = id => document.getElementById(id);
-      if(byId("dailyDone")) byId("dailyDone").textContent = isAdmin ? done + 14 : done;
-      if(byId("dailyTodo")) byId("dailyTodo").textContent = progress;
-      if(byId("dailyLate")) byId("dailyLate").textContent = isAdmin ? late : 2;
-      if(byId("dailyPercent")) byId("dailyPercent").textContent = rate + "%";
-      if(byId("dailyDonut")) byId("dailyDonut").style.setProperty("--donut", rate + "%");
-      if(byId("funnelDoneNum")) byId("funnelDoneNum").textContent = isAdmin ? done + 14 : done;
-      if(byId("funnelDone")) byId("funnelDone").style.width = Math.max(20, rate) + "%";
-      if(byId("funnelProgressNum")) byId("funnelProgressNum").textContent = isAdmin ? progress + 29 : progress;
-      if(byId("funnelProgress")) byId("funnelProgress").style.width = Math.min(100, progress * 12 + 35) + "%";
-    }
-
-    // ───────────────── 업무 관리 ─────────────────
-    function toggleTask(i){
-      tasks[i].done = !tasks[i].done;
-      if(tasks[i].done) tasks[i].progress = 100;
-      renderTasks();
-      updateKpis();
-      addFeed("업무 상태 변경", `${tasks[i].title} 상태가 업데이트되었습니다.`, ["#업무공유","#진행률"]);
-      toast("업무 상태가 갱신되었습니다.");
-    }
-
-    function editTask(i,value){
-      tasks[i].title = value;
-      renderTasks();
-      toast("업무명이 수정되었습니다.");
-    }
-
-    function openTaskModal(){
-      if(currentRole !== "admin"){
-        toast("업무 추가는 관리자 권한에서만 가능합니다.");
-        return;
-      }
-      document.getElementById("taskModal").classList.add("show");
-    }
-
-    function closeTaskModal(){
-      document.getElementById("taskModal").classList.remove("show");
-    }
-
-    function createTaskFromModal(){
-      const title = document.getElementById("newTaskTitle").value.trim() || "신규 업무";
-      const owner = document.getElementById("newTaskOwner").value;
-      const level = document.getElementById("newTaskPriority").value;
-      const project = document.getElementById("newTaskProject").value;
-      const progress = Number(document.getElementById("newTaskProgress").value);
-
-      tasks.unshift({
-        title, owner, project, level, progress,
-        done: progress >= 100
-      });
-
-      closeTaskModal();
-      renderTasks();
-      renderHeatmap();
-      updateKpis();
-      addFeed("업무 배정", `${owner}에게 '${title}' 업무가 배정되었습니다.`, ["#업무배정", "#" + level]);
-      toast("신규 업무가 추가되고 KPI가 갱신되었습니다.");
-    }
-
-    // ───────────────── 채팅/피드/메모 ─────────────────
-    function sendChat(){
-      const input = document.getElementById("chatInput");
-      if(!input.value.trim()) return;
-      chats.push({from: currentRole === "admin" ? "관리자" : "한서윤", text: input.value.trim()});
-      input.value = "";
-      renderComm();
-      toast("팀 채팅이 전송되었습니다.");
-    }
-
-    function addFeed(from,text,tags){
-      feeds.unshift({from,text,tags});
-      renderComm();
-    }
-
-    function saveNotes(){
-      const notes = [...document.querySelectorAll(".note")].map(n=>n.value);
-      localStorage.setItem("finalDashNotes", JSON.stringify(notes));
-    }
-
-    function loadNotes(){
-      const notes = JSON.parse(localStorage.getItem("finalDashNotes") || "null");
-      if(notes){
-        document.querySelectorAll(".note").forEach((n,i)=> n.value = notes[i] || n.value);
-      }
-    }
-
-    function sendReport(){
-      addFeed("결산 자동화", "일일 결산 리포트가 Gmail 발송 대기열에 등록되었습니다.", ["#결산","#Gmail"]);
-      toast("일일 결산 Gmail 발송 데모 완료");
-    }
-
-    function toast(msg){
-      const t = document.getElementById("toast");
-      t.textContent = msg;
-      t.classList.add("show");
-      setTimeout(()=>t.classList.remove("show"),2300);
-    }
-
-    // ── 초기 실행 ──
-    renderAll();
-  </script>
-</body>
-</html>
 <style id="compact-kpi-override">
 /* 최종 압축: KPI 영역을 42px 요약 바로 고정 */
 .dashboard{grid-template-rows:50px 42px 1fr 150px 34px !important;}
@@ -4263,3 +3144,1171 @@ function renderComm(){
 }
 
 </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="screen">
+      <!-- ── 로그인 페이지 ── -->
+      <section class="login-page" id="loginPage">
+        <div class="login-left">
+          <div class="system-badge"><span class="pulse"></span> Railway Online Ready · Enterprise Workflow OS</div>
+          <div class="login-copy">
+            <h1>One Login,<br/>Role-based Dashboard</h1>
+            <p>
+              Google 계정 또는 사내 계정으로 접속한 뒤, 권한에 따라 관리자용 팀 관제 화면과 사원용 개인 업무 화면을 구분해서 보여주는
+              업무 대시보드입니다. 한 화면 안에서 업무 배정, 진행률, 채팅, 피드, 포스트잇, 결산 분석, 배포 상태를 확인합니다.
+            </p>
+          </div>
+          <div class="login-feature-grid">
+            <div class="login-feature"><strong>Admin</strong><span>업무 추가·담당자 지정·팀 전체 workload</span></div>
+            <div class="login-feature"><strong>Staff</strong><span>내 업무·완료 처리·개인 결산 중심</span></div>
+            <div class="login-feature"><strong>Google</strong><span>권한 선택 후 Google로 계속하기</span></div>
+            <div class="login-feature"><strong>Online</strong><span>GitHub/Railway/Gmail/API 상태 표시</span></div>
+          </div>
+        </div>
+
+        <div class="login-panel">
+          <h2>서비스 로그인</h2>
+          <p>역할을 먼저 선택한 뒤 관리자/사원 계정 또는 Google 계정으로 접속합니다.</p>
+
+          <div class="role-cards">
+            <button class="role-card active" id="roleAdmin" onclick="selectRole('admin')">
+              <strong>관리자 / 팀장</strong>
+              <span>업무 배정, 팀원별 업무량, 전체 결산 분석</span>
+            </button>
+            <button class="role-card" id="roleStaff" onclick="selectRole('staff')">
+              <strong>사원</strong>
+              <span>내 업무 진행률, 완료 처리, 팀 공지 확인</span>
+            </button>
+          </div>
+
+          <div class="field">
+            <label>아이디</label>
+            <input id="loginId" value="admin" />
+          </div>
+          <div class="field">
+            <label>비밀번호</label>
+            <input id="loginPw" type="password" value="1234" />
+          </div>
+
+          <div class="login-actions">
+            <button class="primary-btn" onclick="loginWithAccount()">사내 계정 로그인</button>
+            <button class="secondary-btn" onclick="fillDemo()">데모 계정 자동입력</button>
+          </div>
+          <button class="google-btn" onclick="googleLogin()">G Google로 계속하기</button>
+
+          <div class="login-note">
+            관리자: admin / 1234 · 사원: staff / 1234<br/>
+            Google 계정으로 로그인하면 관리자 이메일은 관리자, 그 외 계정은 사원 화면으로 진입합니다.
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 대시보드 화면 ── -->
+      <main class="dashboard" id="dashboard">
+        <!-- ── 헤더 ── -->
+        <header>
+          <div class="brand">
+            <div class="logo">OS</div>
+            <div class="title">
+              <h1>Workflow OS · Operations Command Center</h1>
+              <p id="roleText">관리자 모드 · 업무 배정 / 팀 관제 / 결산 분석</p>
+            </div>
+          </div>
+          <div class="led-notice" aria-label="긴급 공지 전광판">
+            <span class="led-label">긴급 공지</span>
+            <div class="led-window">
+              <div class="led-track">
+                보안 패치 재기동 13:00~13:20 예정 <span class="led-dot">●</span> 14:00 PM 회의와 QA 리뷰 일정 충돌 <span class="led-dot">●</span> 17:00 전 결산 리포트 Gmail 발송 확인
+              </div>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button class="pill blue" onclick="toast('Google OAuth 연결 상태: Ready')">Continue with Google</button>
+            <div class="pill purple" id="roleBadge">관리자</div>
+            <div class="pill green"><span class="pulse"></span> Online</div>
+            <div class="pill">Alerts <span id="noticeCount">3</span></div>
+            <button class="pill red" onclick="logout()">로그아웃</button>
+          </div>
+        </header>
+
+        <!-- ── KPI 카드 ── -->
+        <section class="kpis">
+          <div class="kpi blue">
+            <div class="kpi-top"><small>오늘 업무 상태</small><span class="delta" id="taskDelta">+3</span></div>
+            <strong id="kpiTotal">18</strong>
+            <div class="kpi-text" id="taskKpiText">완료 7 · 진행 8 · 지연 3<br/>다음: QA 승인 확인</div>
+            <div class="mini-row"><span>처리율</span><div class="tiny-bar"><div class="tiny-fill" id="taskRateBar" style="width:61%"></div></div><span id="taskRate">61%</span></div>
+          </div>
+
+          <div class="kpi green">
+            <div class="kpi-top"><small>완료율</small><span class="delta">자동갱신</span></div>
+            <strong id="kpiDoneRate">83%</strong>
+            <div class="kpi-text">완료 체크 시 즉시 반영<br/>부서 평균 대비 비교</div>
+            <div class="spark" id="doneSpark"><i style="height:38%"></i><i style="height:52%"></i><i style="height:70%"></i><i style="height:83%"></i></div>
+          </div>
+
+          <div class="kpi red">
+            <div class="kpi-top"><small>SLA 위험</small><span class="delta warn">즉시</span></div>
+            <strong id="kpiSla">3</strong>
+            <div class="kpi-text">보안패치 18m<br/>QA검토 1.4h</div>
+            <div class="mini-row"><span>조치</span><div class="tiny-bar"><div class="tiny-fill" style="width:86%;background:var(--red)"></div></div><span>High</span></div>
+          </div>
+
+          <div class="kpi yellow">
+            <div class="kpi-top"><small>병목 지점</small><span class="delta warn">주의</span></div>
+            <strong>QA</strong>
+            <div class="kpi-text">검토 단계 전환율 낮음<br/>리뷰 인력 분산 필요</div>
+            <div class="spark"><i style="height:26%;background:var(--yellow)"></i><i style="height:72%;background:var(--red)"></i><i style="height:48%;background:var(--yellow)"></i></div>
+          </div>
+
+          <div class="kpi purple">
+            <div class="kpi-top"><small>예측 지연 업무</small><span class="delta warn">AI</span></div>
+            <strong>2</strong>
+            <div class="kpi-text">보안 리뷰 · QA 승인<br/>17시 전 조치 권장</div>
+            <div class="mini-row"><span>예측</span><div class="tiny-bar"><div class="tiny-fill" style="width:74%;background:linear-gradient(90deg,var(--purple),var(--cyan))"></div></div><span>74%</span></div>
+          </div>
+
+          <div class="kpi orange">
+            <div class="kpi-top"><small>자동화 절감</small><span class="delta">+1.2h</span></div>
+            <strong>4.2h</strong>
+            <div class="kpi-text">결산 자동작성<br/>Gmail 발송 대기</div>
+            <div class="spark"><i style="height:38%;background:var(--orange)"></i><i style="height:72%;background:var(--green)"></i><i style="height:88%;background:var(--green)"></i></div>
+          </div>
+
+          <div class="kpi blue">
+            <div class="kpi-top"><small>일정 충돌</small><span class="delta warn">1건</span></div>
+            <strong>14:00</strong>
+            <div class="kpi-text">PM 회의 / QA 리뷰<br/>시간대 혼잡</div>
+            <div class="mini-row"><span>오후</span><div class="tiny-bar"><div class="tiny-fill" style="width:72%"></div></div><span>혼잡</span></div>
+          </div>
+
+          <div class="kpi red">
+            <div class="kpi-top"><small>긴급 이슈</small><span class="delta warn">HIGH</span></div>
+            <strong>4</strong>
+            <div class="kpi-text">장애 1 · 보안 1<br/>승인대기 2</div>
+            <div class="spark"><i style="height:75%;background:var(--red)"></i><i style="height:48%;background:var(--orange)"></i><i style="height:62%;background:var(--red)"></i></div>
+          </div>
+        </section>
+
+        <!-- ── 메인 영역 ── -->
+        <section class="main-grid">
+          <!-- 업무 보드 -->
+          <article class="panel todo-panel">
+            <div class="panel-head">
+              <div>
+                <h2 id="taskPanelTitle">팀 업무 분장 · To-do</h2>
+                <div class="desc" id="taskPanelDesc">관리자: 업무 추가/수정/담당자 지정 가능</div>
+              </div>
+              <button class="mini-btn" id="addTodoBtn" onclick="openTaskModal()">+ 업무</button>
+            </div>
+            <div class="todo-list" id="todoList"></div>
+          </article>
+
+          <!-- 프로젝트 -->
+          <article class="panel project-panel">
+            <div class="panel-head">
+              <div>
+                <h2>프로젝트 운영 관제</h2>
+                <div class="desc">PM / 예산 / D-day / 진행률</div>
+              </div>
+              <button class="mini-btn" onclick="toast('프로젝트 데이터 동기화 완료')">Sync</button>
+            </div>
+            <div class="project-list" id="projectList"></div>
+          </article>
+
+          <!-- 운영 분석 -->
+          <article class="panel analysis-panel">
+            <div class="panel-head">
+              <div>
+                <h2>운영 분석 · Funnel / Calendar</h2>
+                <div class="desc">업무 흐름과 일정 혼잡도</div>
+              </div>
+            </div>
+            <div class="analysis-grid">
+              <div class="micro-card">
+                <h3>업무 처리 Funnel <span>병목: 검토</span></h3>
+                <div class="funnel-row"><span>생성</span><div class="funnel-bar"><i style="width:100%"></i></div><b id="funnelCreated">48</b></div>
+                <div class="funnel-row"><span>진행</span><div class="funnel-bar"><i id="funnelProgress" style="width:70%"></i></div><b id="funnelProgressNum">34</b></div>
+                <div class="funnel-row"><span>검토</span><div class="funnel-bar"><i style="width:38%;background:linear-gradient(90deg,var(--yellow),var(--red))"></i></div><b>18</b></div>
+                <div class="funnel-row"><span>완료</span><div class="funnel-bar"><i id="funnelDone" style="width:31%;background:linear-gradient(90deg,var(--green),var(--cyan))"></i></div><b id="funnelDoneNum">15</b></div>
+                <div class="insight-text">검토 단계 전환율 52.9% → QA 검토자 추가 배정 필요</div>
+              </div>
+
+              <div class="micro-card">
+                <h3>일정 밀도 <span>충돌 1건</span></h3>
+                <div class="calendar-density">
+                  <div class="density-chip low"><b>09</b><span>여유 34%</span></div>
+                  <div class="density-chip mid"><b>10</b><span>보통 62%</span></div>
+                  <div class="density-chip low"><b>11</b><span>여유 45%</span></div>
+                  <div class="density-chip high"><b>14</b><span>충돌 92%</span></div>
+                  <div class="density-chip mid"><b>16</b><span>혼잡 71%</span></div>
+                </div>
+                <div class="insight-text"><b>14:00 충돌</b> · PM 회의와 QA 리뷰가 겹쳐 QA 리뷰 분산 권장</div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 업무 SNS Hub -->
+          <article class="panel comm-panel">
+            <div class="panel-head">
+              <div>
+                <h2>업무 SNS Hub</h2>
+                <div class="desc">팀 채팅 · 공지 피드 · 바로 조치할 업무를 한 화면에 요약</div>
+              </div>
+              <button class="mini-btn" onclick="addFeed('관리자 공지','새 공지가 업무 피드에 등록되었습니다.',['#공지','#공유'])">+ 공지</button>
+            </div>
+            <div class="comm-split">
+              <div class="comm-box">
+                <div class="comm-box-title"><b>팀 채팅</b><div class="hub-tabs" id="chatTabs"><button class="hub-tab active" onclick="setChatView('today')">오늘</button><button class="hub-tab" onclick="setChatView('week')">이번주</button><button class="hub-tab" onclick="setChatView('all')">전체기록</button></div></div>
+                <div class="comm-scroll" id="chatList"></div>
+                <div class="chat-input">
+                  <input id="chatInput" placeholder="업무 메시지 입력" onkeydown="if(event.key==='Enter')sendChat()" />
+                  <button onclick="sendChat()">전송</button>
+                </div>
+              </div>
+              <div class="comm-box">
+                <div class="comm-box-title"><b>업무 피드</b><div class="hub-tabs" id="feedTabs"><button class="hub-tab active" onclick="setFeedView('today')">오늘</button><button class="hub-tab" onclick="setFeedView('week')">이번주</button><button class="hub-tab" onclick="setFeedView('all')">전체기록</button></div></div>
+                <div class="comm-scroll" id="feedList"></div>
+              </div>
+              <div class="comm-box hub-summary">
+                <div class="comm-box-title"><b>Hub 요약</b><span>오늘</span></div>
+                <div class="hub-metric-grid">
+                  <div class="hub-metric"><strong>3</strong><span>새 대화</span></div>
+                  <div class="hub-metric"><strong>2</strong><span>긴급 공지</span></div>
+                  <div class="hub-metric"><strong>1</strong><span>승인 요청</span></div>
+                  <div class="hub-metric"><strong>17:00</strong><span>결산 마감</span></div>
+                </div>
+                <div class="hub-action-list">
+                  <div class="hub-action"><b>즉시 확인</b> QA 기준표 업데이트 · 검토자 배정 필요</div>
+                  <div class="hub-action"><b>공유 예정</b> 보안 패치 재기동 시간 팀 공지</div>
+                  <div class="hub-action"><b>자동화</b> 일일 결산 작성 후 Gmail 발송 대기</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 배포 상태/반영 체크 -->
+          <article class="panel status-panel">
+            <div class="panel-head">
+              <div>
+                <h2>온라인 상태 · 반영 체크</h2>
+                <div class="desc">요구사항 반영 여부를 즉시 확인</div>
+              </div>
+              <button class="mini-btn" onclick="toast('모든 상태 점검 완료')">Check</button>
+            </div>
+            <div class="status-list">
+              <div class="deploy-grid">
+                <div class="deploy-card"><strong>GitHub</strong><span>Connected</span></div>
+                <div class="deploy-card"><strong>Railway</strong><span>Online Ready</span></div>
+                <div class="deploy-card"><strong>Google</strong><span>OAuth Connected</span></div>
+                <div class="deploy-card"><strong>Gmail</strong><span>API Ready</span></div>
+              </div>
+              <div class="check-list" id="checkList"></div>
+            </div>
+          </article>
+
+          <!-- AI 인사이트 -->
+          <article class="panel ai-panel">
+            <div class="panel-head">
+              <div>
+                <h2>AI Ops Assistant · 추천 조치</h2>
+                <div class="desc">관리자/사원 권한별 해석</div>
+              </div>
+              <button class="mini-btn" onclick="toast('AI 인사이트 갱신 완료')">Refresh</button>
+            </div>
+            <div class="ai-grid" id="aiGrid"></div>
+          </article>
+
+          <!-- 히트맵 -->
+          <article class="panel heatmap-panel">
+            <div class="panel-head">
+              <div>
+                <h2>팀원별 Workload Heatmap</h2>
+                <div class="desc" id="heatmapDesc">관리자는 팀원별 부하를 전체 확인</div>
+              </div>
+            </div>
+            <div class="heatmap-wrap" id="heatmap"></div>
+          </article>
+
+          <!-- 포스트잇 -->
+          <article class="panel notes-panel">
+            <div class="panel-head">
+              <div>
+                <h2>포스트잇 메모</h2>
+                <div class="desc">3개 메모 localStorage 저장</div>
+              </div>
+            </div>
+            <div class="notes-grid">
+              <textarea class="note" oninput="saveNotes()">17:00 결산 리포트 확인</textarea>
+              <textarea class="note" oninput="saveNotes()">보안 패치 완료 후 공지</textarea>
+              <textarea class="note" oninput="saveNotes()">QA 리뷰 일정 재조정</textarea>
+            </div>
+          </article>
+        </section>
+
+        <!-- ── 결산 분석 ── -->
+        <section class="analytics">
+          <div class="chart-card">
+            <h3>일일 결산 <span id="dailyScope">팀 기준</span></h3>
+            <div class="donut-wrap">
+              <div class="donut" id="dailyDonut"><b id="dailyPercent">72%</b></div>
+              <div class="legend-list">
+                <div><span>완료</span><b id="dailyDone">15</b></div>
+                <div><span>미완료</span><b id="dailyTodo">3</b></div>
+                <div><span>지연</span><b id="dailyLate">2</b></div>
+                <div><span>평균 처리</span><b>5.2h</b></div>
+              </div>
+            </div>
+            <div class="chart-foot"><b>해석:</b> 완료율과 SLA 위험을 함께 봐야 함</div>
+          </div>
+
+          <div class="chart-card">
+            <h3>주간 결산 <span>요일별 완료 추이</span></h3>
+            <div class="line-chart">
+              <svg viewBox="0 0 220 90" preserveAspectRatio="none">
+                <polyline fill="none" stroke="rgba(64,224,208,.95)" stroke-width="3" points="8,70 42,64 76,52 110,57 144,36 178,27 212,20"/>
+                <polyline fill="rgba(64,224,208,.13)" stroke="none" points="8,70 42,64 76,52 110,57 144,36 178,27 212,20 212,90 8,90"/>
+                <circle cx="8" cy="70" r="3" fill="#40e0d0"/><circle cx="42" cy="64" r="3" fill="#40e0d0"/><circle cx="76" cy="52" r="3" fill="#40e0d0"/><circle cx="110" cy="57" r="3" fill="#40e0d0"/><circle cx="144" cy="36" r="3" fill="#40e0d0"/><circle cx="178" cy="27" r="3" fill="#40e0d0"/><circle cx="212" cy="20" r="3" fill="#40e0d0"/>
+                <text x="8" y="86">월</text><text x="42" y="86">화</text><text x="76" y="86">수</text><text x="110" y="86">목</text><text x="144" y="86">금</text><text x="178" y="86">토</text><text x="208" y="86">일</text>
+              </svg>
+            </div>
+            <div class="chart-foot"><b>금요일 처리량 급증</b> · 주중 검토 병목 해소</div>
+          </div>
+
+          <div class="chart-card">
+            <h3>월간 결산 <span>유형별 상태</span></h3>
+            <div class="stack-list">
+              <div class="stack-row"><span>문서</span><div class="stackbar"><span class="seg done" style="width:62%"></span><span class="seg progress" style="width:28%"></span><span class="seg delay" style="width:10%"></span></div><b>90</b></div>
+              <div class="stack-row"><span>QA</span><div class="stackbar"><span class="seg done" style="width:48%"></span><span class="seg progress" style="width:32%"></span><span class="seg delay" style="width:20%"></span></div><b>52</b></div>
+              <div class="stack-row"><span>보안</span><div class="stackbar"><span class="seg done" style="width:45%"></span><span class="seg progress" style="width:25%"></span><span class="seg delay" style="width:30%"></span></div><b>31</b></div>
+              <div class="stack-row"><span>정산</span><div class="stackbar"><span class="seg done" style="width:70%"></span><span class="seg progress" style="width:20%"></span><span class="seg delay" style="width:10%"></span></div><b>44</b></div>
+            </div>
+            <div class="chart-foot"><b>보안 지연 30%</b> · workload와 연결</div>
+          </div>
+
+          <div class="chart-card">
+            <h3>분기 병목 TOP5 <span>지연/승인대기 건수</span></h3>
+            <div class="bottleneck-list">
+              <div class="bottleneck-row high"><span>QA 승인 지연</span><div class="bottleneck-bar"><i style="width:100%"></i></div><b>12건</b></div>
+              <div class="bottleneck-row high"><span>보안 패치 SLA 초과</span><div class="bottleneck-bar"><i style="width:72%"></i></div><b>8건</b></div>
+              <div class="bottleneck-row mid"><span>ERP 검토 병목</span><div class="bottleneck-bar"><i style="width:55%"></i></div><b>6건</b></div>
+              <div class="bottleneck-row mid"><span>회의 일정 충돌</span><div class="bottleneck-bar"><i style="width:45%"></i></div><b>5건</b></div>
+              <div class="bottleneck-row low"><span>외주 승인 대기</span><div class="bottleneck-bar"><i style="width:36%"></i></div><b>4건</b></div>
+            </div>
+            <div class="chart-foot"><b>우선 조치:</b> QA 검토자 추가 배정 → 보안 SLA 재조정</div>
+          </div>
+
+          <div class="chart-card">
+            <h3>연간 결산 <span>기여도 + 과부하</span></h3>
+            <div class="rank-list">
+              <div class="rank-row"><span>김민지</span><div class="rank-bar"><i style="width:92%"></i></div><b>21</b></div>
+              <div class="rank-row"><span>이준호</span><div class="rank-bar"><i style="width:86%"></i></div><b>19</b></div>
+              <div class="rank-row"><span>한서윤</span><div class="rank-bar"><i style="width:73%"></i></div><b>16</b></div>
+              <div class="rank-row"><span>박서연</span><div class="rank-bar"><i style="width:64%"></i></div><b>14</b></div>
+              <div class="rank-row"><span>오세훈</span><div class="rank-bar"><i style="width:58%"></i></div><b>12</b></div>
+            </div>
+            <div class="chart-foot">성과 높음 ≠ 적정 배분 · 상위 2명 과부하 주의</div>
+          </div>
+        </section>
+
+        <!-- 푸터 -->
+        <footer>
+          <div>Integrated Cloud Services Active · Secure Auth · Mail Automation · Activity Archive Live</div>
+          <div class="footer-actions">
+            <button class="pill green" onclick="sendReport()">일일 결산 Gmail 발송</button>
+            <button class="pill" onclick="toast('모든 기능 온라인 활성화 상태를 확인했습니다.')">기능 활성화 확인</button>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- ── 업무 추가 모달 ── -->
+  <div class="modal" id="taskModal">
+    <div class="modal-box">
+      <h2>관리자 업무 추가</h2>
+      <p>담당자, 우선순위, 진행률을 지정하면 KPI와 업무 보드가 자동 갱신됩니다.</p>
+      <div class="modal-grid">
+        <div class="modal-field full">
+          <label>업무명</label>
+          <input id="newTaskTitle" value="신규 업무를 입력하세요" />
+        </div>
+        <div class="modal-field">
+          <label>담당자</label>
+          <select id="newTaskOwner">
+            <option>김민지</option>
+            <option>이준호</option>
+            <option>한서윤</option>
+            <option>박서연</option>
+            <option>오세훈</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label>우선순위</label>
+          <select id="newTaskPriority">
+            <option value="HIGH">HIGH</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="LOW">LOW</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label>프로젝트</label>
+          <select id="newTaskProject">
+            <option>보안 취약점 대응</option>
+            <option>ERP 전사 고도화</option>
+            <option>AI 문서 자동화</option>
+            <option>신규 모바일 앱 런칭</option>
+            <option>정산 프로세스 개선</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label>진행률</label>
+          <select id="newTaskProgress">
+            <option value="0">0%</option>
+            <option value="25">25%</option>
+            <option value="50">50%</option>
+            <option value="75">75%</option>
+            <option value="100">100%</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="primary-btn" onclick="createTaskFromModal()">업무 추가</button>
+        <button class="secondary-btn" onclick="closeTaskModal()">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ───────────────── 데이터 ─────────────────
+    let currentRole = "admin";
+    let selectedRole = "admin";
+
+    const projects = [
+      ["업무 자동화 대시보드","PM 김민지 · 예산 0.5억 · D-26",72],
+      ["ERP 전사 고도화","PM 오세훈 · 예산 4.2억 · D-133",39],
+      ["AI 문서 자동화","PM 한서윤 · 예산 2.6억 · D-86",58],
+      ["보안 취약점 대응","PM 이준호 · 예산 0.9억 · D-8",81]
+    ];
+
+    const defaultTasks = [
+      {title:"긴급 보안 패치 적용 및 시스템 재기동", owner:"이준호", project:"보안 취약점 대응", level:"HIGH", progress:15, done:false},
+      {title:"QA 테스트 결과 검토 및 오류 분류 기준 확정", owner:"김민지", project:"ERP 전사 고도화", level:"HIGH", progress:45, done:false},
+      {title:"주간 업무 요약 리포트 자동화 테스트", owner:"한서윤", project:"AI 문서 자동화", level:"MEDIUM", progress:100, done:true},
+      {title:"외주 용역 산출물 검수 및 대금 지급", owner:"박서연", project:"정산 프로세스 개선", level:"MEDIUM", progress:55, done:false},
+      {title:"신규 모바일 앱 런칭 사전 점검", owner:"오세훈", project:"신규 모바일 앱 런칭", level:"LOW", progress:35, done:false}
+    ];
+
+    let tasks = JSON.parse(localStorage.getItem("finalDashTasks") || "null") || defaultTasks;
+
+    let chatView = "today";
+    let feedView = "today";
+
+    function buildChatLogs(){
+      const today = [
+        {type:"date", label:"2026.05.27 수요일"},
+        {from:"김민지", time:"09:12", text:"QA 기준표 최종본 올라왔어요. 배포 전 체크리스트만 확인 부탁드립니다.", team:"QA"},
+        {from:"이준호", time:"09:14", text:"VPN 인증 서버 에러율 올라가고 있습니다. 인프라팀 확인 중입니다.", team:"보안"},
+        {from:"박서연", time:"09:26", text:"외주 정산 승인 2건 아직 남아있어요. 담당자 확인 가능할까요?", team:"재무"},
+        {from:"나", time:"09:31", text:"QA 승인 끝나면 바로 결산 리포트 자동 발송 테스트 돌릴게요.", team:"PM", me:true, read:"읽음 3"},
+        {from:"오세훈", time:"10:03", text:"14시 PM 회의 자료 업로드 완료했습니다.", team:"PM"}
+      ];
+      const names=[['김민지','QA'],['이준호','보안'],['한서윤','AI'],['박서연','재무'],['오세훈','PM']];
+      const texts=["승인 대기 건 확인 부탁드립니다.","로그 모니터링 중입니다.","자동화 테스트 결과 공유드립니다.","정산 승인 상태 업데이트했습니다.","회의 자료 올렸습니다.","일정 변경 확인 부탁드립니다."];
+      const week=[];
+      const all=[];
+      let day=1;
+      for(let i=0;i<50;i++){
+        if(i%7===0){ week.push({type:'date',label:`2026.05.${20+day} 기록`}); day++; }
+        const n=names[i%names.length];
+        week.push({from:n[0], time:`${String(9+(i%9)).padStart(2,'0')}:${String((i*7)%60).padStart(2,'0')}`, text:texts[i%texts.length], team:n[1], me:n[0]==='나'});
+      }
+      day=1;
+      for(let i=0;i<200;i++){
+        if(i%10===0){ all.push({type:'date',label:`2026.05.${String((i/10)+1).padStart(2,'0')} 아카이브`}); }
+        const n=names[i%names.length];
+        all.push({from:n[0], time:`${String(8+(i%10)).padStart(2,'0')}:${String((i*11)%60).padStart(2,'0')}`, text:`${texts[i%texts.length]} (#${i+1})`, team:n[1], me:false});
+      }
+      return {today, week, all};
+    }
+
+    function buildFeedLogs(){
+      const today=[
+        {type:"관리자 공지", time:"09:00", text:"오늘 17:00까지 일일 결산 리포트 제출 바랍니다. 미제출 팀 자동 알림 발송.", tags:["#결산","#공지"]},
+        {type:"QA 공유", time:"10:18", text:"테스트 케이스 v2.3 기준표 업로드 완료. 신규 배포 전 확인 필수", tags:["#QA","#배포"]},
+        {type:"보안팀 공지", time:"10:22", text:"VPN 인증 서버 간헐 장애 감지. 접속 불안정 가능", tags:["#긴급","#보안"]},
+        {type:"PM 업데이트", time:"11:05", text:"ERP 고도화 프로젝트 QA 검토 회의 16:30으로 조정", tags:["#PM","#일정"]},
+        {type:"재무팀 공지", time:"11:42", text:"외주 정산 승인 마감 D-1", tags:["#재무","#승인"]},
+        {type:"인사팀 공지", time:"13:20", text:"재택근무 신청 마감 14:00", tags:["#인사","#재택"]}
+      ];
+      const types=['관리자 공지','QA 공유','보안팀 공지','PM 업데이트','재무팀 공지','인사팀 공지'];
+      const msgs=['업무 기준 업데이트','검토 병목 발생','시스템 점검 예정','일정 변경 안내','승인 마감 안내','근무 정책 안내'];
+      const week=[]; const all=[];
+      for(let i=0;i<50;i++) week.push({type:types[i%types.length], time:`05.${25+(i%7)} ${String(9+(i%8)).padStart(2,'0')}:00`, text:`${msgs[i%msgs.length]} (#${i+1})`, tags:['#업무','#기록']});
+      for(let i=0;i<200;i++) all.push({type:types[i%types.length], time:`04.${String(1+(i%30)).padStart(2,'0')} ${String(8+(i%10)).padStart(2,'0')}:30`, text:`아카이브 공지 내역 ${i+1}`, tags:['#archive','#history']});
+      return {today, week, all};
+    }
+
+    const chatLogs = buildChatLogs();
+    const feedLogs = buildFeedLogs();
+
+    const chats = chatLogs.today;
+    const feeds = feedLogs.today.map(f => ({from:`${f.type} · ${f.time}`, text:f.text, tags:f.tags}));
+
+    const staffCompanyTasks = [
+      {title:"VIP 고객 결제 오류 문의 1차 답변", meta:"Instagram · 13:30 마감 · 진행률 60%", level:"HIGH", done:false},
+      {title:"배송 지연 불만 고객 escalation 정리", meta:"Kakao · 14:20 마감 · 진행률 35%", level:"HIGH", done:false},
+      {title:"SNS DM 신규 문의 7건 빠른 응대", meta:"Instagram · 오늘 처리 · 진행률 40%", level:"MEDIUM", done:false},
+      {title:"일일 고객 응대 리포트 작성", meta:"Gmail 자동 발송 전 검토 · 17:00", level:"REPORT", done:false}
+    ];
+
+    let personalTodos = JSON.parse(localStorage.getItem("staffPersonalTodos") || "null") || [
+      {text:"교수님 메일 보내기", done:false},
+      {text:"발표 자료 수정", done:false},
+      {text:"장학금 서류 확인", done:false}
+    ];
+
+    const adminAnalysisHTML = document.querySelector(".analysis-grid").innerHTML;
+    const adminAnalyticsHTML = document.querySelector(".analytics").innerHTML;
+
+    
+    const checklist = [
+      ["로그인 화면 실제 서비스화","로그인 페이지"],
+      ["관리자/사원 권한 구분","role 기반 화면"],
+      ["Google 로그인 통합 옵션","로그인 버튼"],
+      ["업무 추가 모달","관리자 전용"],
+      ["담당자/우선순위/진행률 선택","모달 필드"],
+      ["KPI 자동 갱신","업무 완료/추가 시"],
+      ["채팅 + 업무 피드 분리","커뮤니케이션 패널"],
+      ["포스트잇 3개","우측 하단"],
+      ["결산 분석 카드 개선","하단 분석"],
+      ["Railway/GitHub/Google/Gmail 상태","상태 패널"]
+    ];
+
+    // ───────────────── 로그인 ─────────────────
+    function selectRole(role){
+      selectedRole = role;
+      document.getElementById("roleAdmin").classList.toggle("active", role === "admin");
+      document.getElementById("roleStaff").classList.toggle("active", role === "staff");
+      document.getElementById("loginId").value = role === "admin" ? "admin" : "staff";
+      document.getElementById("loginPw").value = "1234";
+    }
+
+    function fillDemo(){
+      selectRole(selectedRole);
+      toast("데모 계정이 입력되었습니다.");
+    }
+
+    function loginWithAccount(){
+      const id = document.getElementById("loginId").value.trim();
+      const pw = document.getElementById("loginPw").value.trim();
+      if((selectedRole === "admin" && id === "admin" && pw === "1234") ||
+         (selectedRole === "staff" && id === "staff" && pw === "1234")){
+        enterDashboard(selectedRole);
+      }else{
+        toast("계정 정보를 확인하세요. admin/1234 또는 staff/1234");
+      }
+    }
+
+    function googleLogin(){
+      toast("Google 로그인 화면으로 이동합니다...");
+      window.location.href = "/auth/google";
+    }
+
+    async function checkGoogleSession(){
+      try{
+        const params = new URLSearchParams(window.location.search);
+        const loginStatus = params.get("login");
+        const res = await fetch("/api/me");
+        const data = await res.json();
+
+        if(data.authenticated && data.user){
+          const role = data.user.role || "staff";
+          enterDashboard(role);
+          toast(`Google 로그인 완료 · ${data.user.email} · ${role === "admin" ? "관리자" : "사원"}`);
+          history.replaceState({}, document.title, window.location.pathname);
+          return;
+        }
+
+        if(loginStatus === "google_failed"){
+          toast("Google 로그인 실패: OAuth 설정과 Railway Variables를 확인하세요.");
+          history.replaceState({}, document.title, window.location.pathname);
+        }
+      }catch(error){
+        console.error(error);
+      }
+    }
+
+    function enterDashboard(role){
+      currentRole = role;
+      document.getElementById("loginPage").style.display = "none";
+      document.getElementById("dashboard").classList.add("show");
+      applyRole();
+      renderAll();
+      toast(role === "admin" ? "관리자 대시보드로 접속했습니다." : "사원 대시보드로 접속했습니다.");
+    }
+
+    async function logout(){
+      try{
+        await fetch("/api/logout", { method: "POST" });
+      }catch(error){
+        console.error(error);
+      }
+      document.getElementById("dashboard").classList.remove("show");
+      document.getElementById("loginPage").style.display = "grid";
+      toast("로그아웃되었습니다.");
+    }
+
+    // ───────────────── 권한별 화면 ─────────────────
+    function applyRole(){
+      const isAdmin = currentRole === "admin";
+      const dashboard = document.getElementById("dashboard");
+      dashboard.classList.toggle("staff-mode", !isAdmin);
+      dashboard.classList.toggle("admin-mode", isAdmin);
+
+      document.getElementById("roleBadge").textContent = isAdmin ? "관리자" : "사원";
+      document.querySelector(".title h1").textContent = isAdmin ? "Workflow OS · Operations Command Center" : "Customer Success Workspace";
+      document.getElementById("roleText").textContent = isAdmin
+        ? "관리자 모드 · 업무 배정 / 팀 관제 / 결산 분석"
+        : "사원 모드 · 고객 문의 응대 / SNS 인박스 / 개인 To-do / 응답 SLA";
+      document.getElementById("taskPanelTitle").textContent = isAdmin ? "팀 업무 분장 · To-do" : "오늘 내 업무 체크리스트";
+      document.getElementById("taskPanelDesc").textContent = isAdmin
+        ? "관리자: 업무 추가/수정/담당자 지정 가능"
+        : "사원: 내 담당 업무 + 고객 문의 응대 현황 빠르게 확인";
+      document.getElementById("addTodoBtn").style.display = isAdmin ? "inline-block" : "none";
+      document.getElementById("heatmapDesc").textContent = isAdmin ? "일간 기준 · 행=팀원 / 열=시간대 / 숫자=부하율" : "신규 문의 → 처리 중 → SLA 임박 → 해결 완료";
+      document.getElementById("dailyScope").textContent = isAdmin ? "팀 기준" : "개인 기준";
+
+      const projectTitle = document.querySelector(".project-panel h2");
+      const projectDesc = document.querySelector(".project-panel .desc");
+      const projectBtn = document.querySelector(".project-panel .mini-btn");
+      projectTitle.textContent = isAdmin ? "프로젝트 운영 관제" : "나의 오늘 근무 보드";
+      projectDesc.textContent = isAdmin ? "PM / 예산 / D-day / 진행률" : "출근 상태 · 오늘 루틴 · 개인 마감";
+      projectBtn.textContent = isAdmin ? "Sync" : "상태 저장";
+
+      const analysisTitle = document.querySelector(".analysis-panel h2");
+      const analysisDesc = document.querySelector(".analysis-panel .desc");
+      analysisTitle.textContent = isAdmin ? "운영 분석 · Funnel / Calendar" : "개인 생산성 · 집중 시간";
+      analysisDesc.textContent = isAdmin ? "업무 흐름과 일정 혼잡도" : "내 업무 처리 흐름과 오늘 일정 혼잡도";
+
+      const commDesc = document.querySelector(".comm-panel .desc");
+      commDesc.textContent = isAdmin ? "실시간 팀 커뮤니케이션 · 공지 아카이브" : "내 멘션 · 고객 escalation · 응대 알림 중심으로 요약";
+    }
+
+    // ───────────────── 렌더링 ─────────────────
+    function renderAll(){
+      renderTasks();
+      renderProjects();
+      renderAnalysis();
+      renderComm();
+      renderStatus();
+      renderAI();
+      renderHeatmap();
+      renderAnalytics();
+      loadNotes();
+      updateKpis();
+    }
+
+    function visibleTasks(){
+      if(currentRole === "admin") return tasks;
+      return tasks.filter(t => t.owner === "한서윤" || t.done);
+    }
+
+    function renderTasks(){
+      const list = document.getElementById("todoList");
+
+      if(currentRole !== "admin"){
+        const companyHtml = staffCompanyTasks.map((t,i)=>{
+          const chipClass = t.level === "HIGH" ? "" : t.level === "MEDIUM" ? "mid" : "low";
+          return `
+            <div class="staff-work-item">
+              <input type="checkbox" ${t.done ? "checked" : ""} onchange="toggleStaffCompanyTask(${i})">
+              <div>
+                <div class="staff-work-title">${t.title}</div>
+                <div class="staff-work-meta">${t.meta}</div>
+              </div>
+              <span class="chip ${chipClass}">${t.level}</span>
+            </div>`;
+        }).join("");
+
+        const personalHtml = personalTodos.map((t,i)=>`
+          <div class="personal-item ${t.done ? "done" : ""}">
+            <input type="checkbox" ${t.done ? "checked" : ""} onchange="togglePersonalTodo(${i})">
+            <span>${t.text}</span>
+            <button onclick="deletePersonalTodo(${i})">×</button>
+          </div>`).join("");
+
+        list.innerHTML = `
+          <div class="staff-company-box">
+            <div class="staff-section-title">회사 업무 체크리스트 <span>고객 응대 / 마감 / 진행률</span></div>
+            <div class="staff-work-scroll">${companyHtml}</div>
+          </div>
+          <div class="personal-todo-box">
+            <div class="staff-section-title">개인 To-do <span>업무 체크리스트와 분리 저장</span></div>
+            <div class="personal-add-row">
+              <input id="personalTodoInput" placeholder="개인 To-do 입력" onkeydown="if(event.key==='Enter')addPersonalTodo()">
+              <button onclick="addPersonalTodo()">+</button>
+            </div>
+            <div class="personal-list">${personalHtml}</div>
+          </div>`;
+        return;
+      }
+
+      const data = visibleTasks();
+      list.innerHTML = data.map((t)=>{
+        const i = tasks.indexOf(t);
+        const chipClass = t.level === "HIGH" ? "" : t.level === "MEDIUM" ? "mid" : "low";
+        return `
+          <div class="todo">
+            <input type="checkbox" ${t.done ? "checked" : ""} onchange="toggleTask(${i})">
+            <div>
+              <input class="todo-title" value="${t.title}" onchange="editTask(${i}, this.value)">
+              <div class="todo-meta">${t.owner} · ${t.project} · 진행률 ${t.progress}%</div>
+            </div>
+            <span class="chip ${chipClass}">${t.level}</span>
+          </div>`;
+      }).join("");
+      localStorage.setItem("finalDashTasks", JSON.stringify(tasks));
+    }
+
+    function renderProjects(){
+      const isAdmin = currentRole === "admin";
+      const list = document.getElementById("projectList");
+      if(isAdmin){
+        list.innerHTML = projects.map(p => `
+          <div class="project">
+            <div class="project-top"><h3>${p[0]}</h3><span class="chip ${p[2] > 75 ? '' : 'mid'}">${p[2]}%</span></div>
+            <p>${p[1]}</p>
+            <div class="bar"><div class="fill" style="width:${p[2]}%"></div></div>
+          </div>
+        `).join("");
+        return;
+      }
+
+      list.innerHTML = `
+        <div class="staff-today-card">
+          <div class="staff-profile-line">
+            <div><b>한서윤 · 고객 커뮤니케이션 / AI 문서 자동화팀</b><span>오늘 근무: 하이브리드 · 고객 문의 응대 + 내부 QA 지원</span></div>
+            <span class="chip info">SNS Desk</span>
+          </div>
+          <div class="staff-focus-list">
+            <div class="staff-focus"><strong>12</strong><span>신규 문의 대기</span></div>
+            <div class="staff-focus"><strong>3</strong><span>우선 응대 대상</span></div>
+            <div class="staff-focus"><strong>89%</strong><span>응답 SLA 준수</span></div>
+            <div class="staff-focus"><strong>17:00</strong><span>일일 운영 리포트 마감</span></div>
+          </div>
+          <div class="staff-routine">
+            <div class="routine-item"><b>10:00</b><div>VIP 고객 문의 응대<span>결제 오류 / 1시간 내 응답</span></div><span class="chip">HIGH</span></div>
+            <div class="routine-item"><b>13:30</b><div>인스타그램 DM 문의 정리<span>신규 문의 7건</span></div><span class="chip purple">SNS</span></div>
+            <div class="routine-item"><b>16:30</b><div>일일 응대 리포트 작성<span>Google Mail 자동 발송 전 검토</span></div><span class="chip low">REPORT</span></div>
+          </div>
+          <div class="staff-focus-check-grid">
+            <div class="staff-timer-card">
+              <div class="staff-mini-label">Focus Timer</div>
+              <div class="staff-timer-time">25:00</div>
+              <div class="staff-mini-desc">VIP 환불 문의 집중 처리 세션</div>
+            </div>
+            <div class="staff-close-card">
+              <div class="staff-mini-label warn">퇴근 전 체크리스트</div>
+              <div class="staff-close-list">☐ 미응답 DM 0건 확인<br>☐ 일일 응대 리포트 제출<br>☐ 긴급 문의 인수인계 완료</div>
+            </div>
+          </div>
+          <div class="staff-privacy-note">실제 고객 커뮤니케이션 담당자의 실행형 워크스페이스처럼 개인 업무 처리와 고객 응대 흐름 중심으로 구성됩니다.</div>
+        </div>`;
+    }
+
+    function setActiveTabs(groupId, value){
+      const tabs = document.querySelectorAll(`#${groupId} .hub-tab`);
+      tabs.forEach(btn => btn.classList.remove("active"));
+      const map = {today:0, week:1, all:2};
+      if(tabs[map[value]]) tabs[map[value]].classList.add("active");
+    }
+
+    function setChatView(view){
+      chatView = view;
+      setActiveTabs("chatTabs", view);
+      renderComm();
+    }
+
+    function setFeedView(view){
+      feedView = view;
+      setActiveTabs("feedTabs", view);
+      renderComm();
+    }
+
+    
+
+    function renderAnalysis(){
+      const isAdmin = currentRole === "admin";
+      const grid = document.querySelector(".analysis-grid");
+      if(isAdmin){
+        grid.innerHTML = adminAnalysisHTML;
+        return;
+      }
+      grid.innerHTML = `
+        <div class="micro-card" style="grid-row:1 / -1;">
+          <h3>SNS Inbox <span>고객명 · 채널 · 상태</span></h3>
+          <div class="sns-inbox">
+            <div class="sns-row"><b>김OO</b><span>Instagram</span><div>결제 오류 문의</div><span class="status-normal">답변 대기</span></div>
+            <div class="sns-row"><b>박OO</b><span>Email</span><div>기업 고객 환불 요청</div><span class="status-vip">VIP</span></div>
+            <div class="sns-row"><b>이OO</b><span>Kakao</span><div>배송 지연 불만</div><span class="status-warn">불만</span></div>
+            <div class="sns-row"><b>최OO</b><span>X</span><div>공개 댓글 이슈</div><span class="status-warn">Escalation</span></div>
+            <div class="sns-row"><b>정OO</b><span>WebChat</span><div>로그인 오류 해결</div><span class="status-done">완료</span></div>
+            <div class="sns-row"><b>윤OO</b><span>Instagram</span><div>이벤트 참여 문의</div><span class="status-normal">일반</span></div>
+          </div>
+        </div>`;
+    }
+
+    function renderAnalytics(){
+      const isAdmin = currentRole === "admin";
+      const area = document.querySelector(".analytics");
+      if(isAdmin){
+        area.innerHTML = adminAnalyticsHTML;
+        return;
+      }
+      area.innerHTML = `
+        <div class="chart-card">
+          <h3>오늘 응대한 문의 수 <span>개인 기준</span></h3>
+          <div class="donut-wrap">
+            <div class="donut" style="--donut:89%"><b>18</b></div>
+            <div class="legend-list">
+              <div><span>해결 완료</span><b>18</b></div>
+              <div><span>처리 중</span><b>7</b></div>
+              <div><span>SLA 임박</span><b>2</b></div>
+              <div><span>VIP</span><b>1</b></div>
+            </div>
+          </div>
+          <div class="chart-foot"><b>해석:</b> 신규 문의보다 해결 속도가 빠른 상태</div>
+        </div>
+        <div class="chart-card">
+          <h3>평균 응답시간 <span>목표 15분</span></h3>
+          <div class="line-chart">
+            <svg viewBox="0 0 220 90" preserveAspectRatio="none">
+              <polyline fill="none" stroke="rgba(64,224,208,.95)" stroke-width="3" points="8,62 42,58 76,47 110,52 144,36 178,28 212,24"/>
+              <polyline fill="rgba(64,224,208,.13)" stroke="none" points="8,62 42,58 76,47 110,52 144,36 178,28 212,24 212,90 8,90"/>
+              <text x="8" y="86">09</text><text x="42" y="86">10</text><text x="76" y="86">11</text><text x="110" y="86">13</text><text x="144" y="86">15</text><text x="178" y="86">16</text><text x="208" y="86">17</text>
+            </svg>
+          </div>
+          <div class="chart-foot"><b>12분</b> · 목표보다 3분 빠름</div>
+        </div>
+        <div class="chart-card">
+          <h3>고객 만족도 <span>CSAT</span></h3>
+          <div class="donut-wrap">
+            <div class="donut" style="--donut:94%"><b>94%</b></div>
+            <div class="legend-list">
+              <div><span>만족</span><b>31</b></div>
+              <div><span>보통</span><b>3</b></div>
+              <div><span>불만</span><b>2</b></div>
+              <div><span>리뷰 필요</span><b>1</b></div>
+            </div>
+          </div>
+          <div class="chart-foot">불만 2건은 배송 지연/환불 이슈</div>
+        </div>
+        <div class="chart-card">
+          <h3>해결률 <span>문의 처리 상태</span></h3>
+          <div class="stack-list">
+            <div class="stack-row"><span>DM</span><div class="stackbar"><span class="seg done" style="width:78%"></span><span class="seg progress" style="width:16%"></span><span class="seg delay" style="width:6%"></span></div><b>23</b></div>
+            <div class="stack-row"><span>Email</span><div class="stackbar"><span class="seg done" style="width:64%"></span><span class="seg progress" style="width:24%"></span><span class="seg delay" style="width:12%"></span></div><b>11</b></div>
+            <div class="stack-row"><span>Kakao</span><div class="stackbar"><span class="seg done" style="width:58%"></span><span class="seg progress" style="width:20%"></span><span class="seg delay" style="width:22%"></span></div><b>9</b></div>
+            <div class="stack-row"><span>Web</span><div class="stackbar"><span class="seg done" style="width:86%"></span><span class="seg progress" style="width:10%"></span><span class="seg delay" style="width:4%"></span></div><b>14</b></div>
+          </div>
+          <div class="chart-foot"><b>해결률 89%</b> · Kakao 불만 응대 개선 필요</div>
+        </div>
+        <div class="chart-card">
+          <h3>FAQ TOP Keywords <span>오늘</span></h3>
+          <div class="keyword-cloud">
+            <span>환불</span><span>배송</span><span>로그인</span><span>결제오류</span><span>이벤트</span><span>쿠폰</span><span>세금계산서</span><span>비밀번호</span>
+          </div>
+          <div class="chart-foot">상위 키워드는 FAQ 자동응답 문구 개선에 사용</div>
+        </div>`;
+    }
+
+    function toggleStaffCompanyTask(i){
+      staffCompanyTasks[i].done = !staffCompanyTasks[i].done;
+      renderTasks();
+      updateKpis();
+      toast("회사 업무 체크 상태가 갱신되었습니다.");
+    }
+
+    function togglePersonalTodo(i){
+      personalTodos[i].done = !personalTodos[i].done;
+      localStorage.setItem("staffPersonalTodos", JSON.stringify(personalTodos));
+      renderTasks();
+    }
+
+    function addPersonalTodo(){
+      const input = document.getElementById("personalTodoInput");
+      if(!input || !input.value.trim()) return;
+      personalTodos.unshift({text:input.value.trim(), done:false});
+      localStorage.setItem("staffPersonalTodos", JSON.stringify(personalTodos));
+      input.value = "";
+      renderTasks();
+      toast("개인 To-do가 추가되었습니다.");
+    }
+
+    function deletePersonalTodo(i){
+      personalTodos.splice(i,1);
+      localStorage.setItem("staffPersonalTodos", JSON.stringify(personalTodos));
+      renderTasks();
+      toast("개인 To-do가 삭제되었습니다.");
+    }
+
+function renderComm(){
+      const chatData = chatLogs[chatView] || chatLogs.today;
+      document.getElementById("chatList").innerHTML = chatData.map((m)=>{
+        if(m.type === "date") return `<div class="date-divider">${m.label}</div>`;
+        return `
+          <div class="chat-msg ${m.me ? 'me' : ''}">
+            <b>${m.from}</b>
+            <span>${m.text}<em class="msg-meta">${m.time} ${m.read ? '· ' + m.read : ''} · ${m.team || '전체'}</em></span>
+          </div>`;
+      }).join("");
+
+      const feedData = feedLogs[feedView] || feedLogs.today;
+      document.getElementById("feedList").innerHTML = feedData.map(f=>`
+        <div class="feed-item"><b>${f.type}<span class="feed-time">${f.time}</span></b><span>${f.text}</span>
+          <div class="feed-tags">${f.tags.slice(0,2).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderStatus(){
+      document.getElementById("checkList").innerHTML = checklist.map(c=>`
+        <div class="check-item">
+          <div class="check-mark">✓</div>
+          <div>${c[0]}<div class="where">${c[1]}</div></div>
+          <span class="chip low">반영</span>
+        </div>
+      `).join("");
+    }
+
+    function renderAI(){
+      const isAdmin = currentRole === "admin";
+      const cards = isAdmin ? [
+        ["QA 병목 예측","검토 단계 대기 업무가 증가했습니다. QA 승인 인력을 1명 추가하는 것이 좋습니다.","추천: 한서윤 → QA 보조 배정"],
+        ["보안 업무 과부하","이준호 업무부하가 92%로 높습니다. 문서화 업무를 분산하세요.","추천: 문서화 → 박서연 이관"],
+        ["자동화 효과","일일 결산 자동작성과 Gmail 발송으로 4.2시간 절감 예상.","추천: 17:00 자동 발송 예약"]
+      ] : [
+        ["AI 답변 초안","VIP 결제 오류 고객에게 표준 응답 템플릿 기반 1차 안내 메시지를 즉시 생성합니다.","권장: 1분 내 1차 응답 발송"],
+        ["고객 감정 분석","배송 지연 문의 고객의 감정 온도가 높습니다. 공개 채널 확산 전 선제 응대가 필요합니다.","감정 상태: 불만 / 긴급도 HIGH"],
+        ["업무 우선순위 추천","SLA 40분 남은 VIP 문의와 공개 댓글 이슈를 일반 DM보다 먼저 처리해야 합니다.","우선 처리: VIP → 공개 이슈 → 일반 문의"],
+        ["관리자 Escalation","환불 승인 권한이 필요한 기업 고객 요청은 관리자 승인 프로세스로 전환하는 것이 안전합니다.","승인 요청: 김민지 PM"]
+      ];
+
+      document.getElementById("aiGrid").innerHTML = cards.map(c=>`
+        <div class="ai-card"><strong>${c[0]}</strong><p>${c[1]}</p><div class="action">${c[2]}</div></div>
+      `).join("");
+    }
+
+    function renderHeatmap(){
+      const panelTitle = document.querySelector(".heatmap-panel h2");
+      const wrap = document.getElementById("heatmap");
+      if(currentRole !== "admin"){
+        panelTitle.textContent = "Customer Response Queue";
+        wrap.className = "customer-queue";
+        wrap.innerHTML = `
+          <div class="queue-col">
+            <div class="queue-title">신규 문의 <span>12건</span></div>
+            <div class="queue-card"><b>Instagram</b>이벤트 참여 방법 문의<div class="q-meta"><span>김OO</span><span>10분 전</span></div></div>
+            <div class="queue-card"><b>Web Chat</b>로그인 인증번호 미수신<div class="q-meta"><span>윤OO</span><span>18분 전</span></div></div>
+            <div class="queue-card"><b>Kakao</b>주문 상태 확인 요청<div class="q-meta"><span>장OO</span><span>21분 전</span></div></div>
+          </div>
+          <div class="queue-col">
+            <div class="queue-title">처리 중 <span>7건</span></div>
+            <div class="queue-card vip"><b>Email · VIP</b>기업 고객 환불 서류 확인<div class="q-meta"><span>박OO</span><span>담당: 나</span></div></div>
+            <div class="queue-card"><b>Instagram DM</b>결제 오류 스크린샷 수집<div class="q-meta"><span>김OO</span><span>진행 60%</span></div></div>
+          </div>
+          <div class="queue-col">
+            <div class="queue-title">SLA 임박 <span>2건</span></div>
+            <div class="queue-card urgent"><b>Kakao · 불만</b>배송 지연 항의 / 보상 문의<div class="q-meta"><span>이OO</span><span>40분 남음</span></div></div>
+            <div class="queue-card urgent"><b>X 공개댓글</b>서비스 장애 불만 확산 가능<div class="q-meta"><span>최OO</span><span>25분 남음</span></div></div>
+          </div>
+          <div class="queue-col">
+            <div class="queue-title">해결 완료 <span>18건</span></div>
+            <div class="queue-card done"><b>Web Chat</b>로그인 오류 해결 안내 완료<div class="q-meta"><span>정OO</span><span>CSAT 5점</span></div></div>
+            <div class="queue-card done"><b>Email</b>세금계산서 재발행 안내<div class="q-meta"><span>문OO</span><span>완료</span></div></div>
+          </div>`;
+        return;
+      }
+
+      panelTitle.textContent = "팀원별 Workload Heatmap";
+      wrap.className = "heatmap-wrap";
+      const adminMap = [
+        ["김민지",[62,78,55,88,74,31]],
+        ["이준호",[75,88,96,92,86,52]],
+        ["한서윤",[38,56,70,72,61,29]],
+        ["박서연",[34,50,61,69,58,22]]
+      ];
+      const times = ["09시","11시","13시","15시","17시","19시"];
+      let html = `<div class="hm-head">일간</div>${times.map(t=>`<div class="hm-head">${t}</div>`).join("")}`;
+      adminMap.forEach(row=>{
+        html += `<div class="hm-label">${row[0]}</div>`;
+        row[1].forEach(v=>{
+          const cls = v >= 90 ? "hm5" : v >= 80 ? "hm4" : v >= 65 ? "hm3" : v >= 45 ? "hm2" : "hm1";
+          html += `<div class="hm-cell ${cls}">${v}</div>`;
+        });
+      });
+      wrap.innerHTML = html;
+    }
+
+    // ───────────────── KPI 자동 갱신 ─────────────────
+    function updateKpis(){
+      const isAdmin = currentRole === "admin";
+      const data = visibleTasks();
+      const total = isAdmin ? data.length : staffCompanyTasks.length;
+      const done = isAdmin ? data.filter(t=>t.done).length : staffCompanyTasks.filter(t=>t.done).length;
+      const late = isAdmin ? data.filter(t=>!t.done && t.level === "HIGH").length : 2;
+      const progress = Math.max(0,total - done);
+      const rate = total ? Math.round(done / total * 100) : 0;
+      const baseTotal = isAdmin ? total + 13 : 12;
+
+      const smalls = document.querySelectorAll(".kpi small");
+      if(isAdmin){
+        smalls[0].textContent = "오늘 업무 상태";
+        smalls[1].textContent = "완료율";
+        smalls[2].textContent = "SLA 위험";
+        smalls[3].textContent = "병목 지점";
+      }else{
+        smalls[0].textContent = "신규 문의";
+        smalls[1].textContent = "오늘 해결";
+        smalls[2].textContent = "SLA 임박";
+        smalls[3].textContent = "고객 감정";
+      }
+
+      document.getElementById("kpiTotal").textContent = baseTotal;
+      document.getElementById("kpiDoneRate").textContent = isAdmin ? rate + "%" : "18";
+      document.getElementById("kpiSla").textContent = isAdmin ? late : "2";
+      document.querySelectorAll(".kpi strong")[3].textContent = isAdmin ? "QA" : "불만";
+      document.getElementById("taskKpiText").innerHTML = isAdmin
+        ? `완료 ${done} · 진행 ${progress} · 지연 ${late}<br/>다음: QA 승인 확인`
+        : `Instagram 7 · Kakao 3 · Email 2<br/>다음: VIP 환불 문의`;
+      document.getElementById("taskRate").textContent = isAdmin ? rate + "%" : "응대";
+      document.getElementById("taskRateBar").style.width = isAdmin ? rate + "%" : "72%";
+
+      const byId = id => document.getElementById(id);
+      if(byId("dailyDone")) byId("dailyDone").textContent = isAdmin ? done + 14 : done;
+      if(byId("dailyTodo")) byId("dailyTodo").textContent = progress;
+      if(byId("dailyLate")) byId("dailyLate").textContent = isAdmin ? late : 2;
+      if(byId("dailyPercent")) byId("dailyPercent").textContent = rate + "%";
+      if(byId("dailyDonut")) byId("dailyDonut").style.setProperty("--donut", rate + "%");
+      if(byId("funnelDoneNum")) byId("funnelDoneNum").textContent = isAdmin ? done + 14 : done;
+      if(byId("funnelDone")) byId("funnelDone").style.width = Math.max(20, rate) + "%";
+      if(byId("funnelProgressNum")) byId("funnelProgressNum").textContent = isAdmin ? progress + 29 : progress;
+      if(byId("funnelProgress")) byId("funnelProgress").style.width = Math.min(100, progress * 12 + 35) + "%";
+    }
+
+    // ───────────────── 업무 관리 ─────────────────
+    function toggleTask(i){
+      tasks[i].done = !tasks[i].done;
+      if(tasks[i].done) tasks[i].progress = 100;
+      renderTasks();
+      updateKpis();
+      addFeed("업무 상태 변경", `${tasks[i].title} 상태가 업데이트되었습니다.`, ["#업무공유","#진행률"]);
+      toast("업무 상태가 갱신되었습니다.");
+    }
+
+    function editTask(i,value){
+      tasks[i].title = value;
+      renderTasks();
+      toast("업무명이 수정되었습니다.");
+    }
+
+    function openTaskModal(){
+      if(currentRole !== "admin"){
+        toast("업무 추가는 관리자 권한에서만 가능합니다.");
+        return;
+      }
+      document.getElementById("taskModal").classList.add("show");
+    }
+
+    function closeTaskModal(){
+      document.getElementById("taskModal").classList.remove("show");
+    }
+
+    function createTaskFromModal(){
+      const title = document.getElementById("newTaskTitle").value.trim() || "신규 업무";
+      const owner = document.getElementById("newTaskOwner").value;
+      const level = document.getElementById("newTaskPriority").value;
+      const project = document.getElementById("newTaskProject").value;
+      const progress = Number(document.getElementById("newTaskProgress").value);
+
+      tasks.unshift({
+        title, owner, project, level, progress,
+        done: progress >= 100
+      });
+
+      closeTaskModal();
+      renderTasks();
+      renderHeatmap();
+      updateKpis();
+      addFeed("업무 배정", `${owner}에게 '${title}' 업무가 배정되었습니다.`, ["#업무배정", "#" + level]);
+      toast("신규 업무가 추가되고 KPI가 갱신되었습니다.");
+    }
+
+    // ───────────────── 채팅/피드/메모 ─────────────────
+    function sendChat(){
+      const input = document.getElementById("chatInput");
+      if(!input.value.trim()) return;
+      chats.push({from: currentRole === "admin" ? "관리자" : "한서윤", text: input.value.trim()});
+      input.value = "";
+      renderComm();
+      toast("팀 채팅이 전송되었습니다.");
+    }
+
+    function addFeed(from,text,tags){
+      feeds.unshift({from,text,tags});
+      renderComm();
+    }
+
+    function saveNotes(){
+      const notes = [...document.querySelectorAll(".note")].map(n=>n.value);
+      localStorage.setItem("finalDashNotes", JSON.stringify(notes));
+    }
+
+    function loadNotes(){
+      const notes = JSON.parse(localStorage.getItem("finalDashNotes") || "null");
+      if(notes){
+        document.querySelectorAll(".note").forEach((n,i)=> n.value = notes[i] || n.value);
+      }
+    }
+
+    async function sendReport(){
+      try{
+        toast("Gmail 발송 요청 중...");
+        const res = await fetch("/api/send-report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        });
+
+        const result = await res.json();
+
+        if(result.ok){
+          const modeText = result.mode === "gmail" ? "실제 Gmail 발송 완료" : "데모 모드 처리";
+          addFeed("결산 자동화", `일일 결산 리포트가 처리되었습니다. (${modeText})`, ["#결산","#Gmail"]);
+          toast(modeText);
+        }else{
+          toast("Gmail 발송 실패: Railway Variables 확인");
+        }
+      }catch(error){
+        console.error(error);
+        toast("Gmail 발송 오류: 서버 연결 확인");
+      }
+    }
+
+    function toast(msg){
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(()=>t.classList.remove("show"),2300);
+    }
+
+    // ── 초기 실행 ──
+    renderAll();
+    checkGoogleSession();
+  </script>
+</body>
+
+</html>

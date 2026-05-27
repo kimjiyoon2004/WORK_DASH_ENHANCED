@@ -1,7 +1,7 @@
 {
-  "name": "workflow-os-dashboard-submit-package",
+  "name": "workflow-os-dashboard-google-oauth-gmail",
   "version": "1.0.0",
-  "description": "Workflow OS dashboard package for GitHub and Railway deployment",
+  "description": "Workflow OS dashboard with Google OAuth login and Gmail daily report for Railway deployment",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -14,6 +14,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "nodemailer": "^6.9.16"
+    "nodemailer": "^6.9.16",
+    "google-auth-library": "^9.15.1",
+    "cookie-parser": "^1.4.7"
   }
 }
